@@ -1,0 +1,25 @@
+{
+  "controller": {
+    "node_id": "CONTROL-01",
+    "lan_ip": "192.168.50.10",
+    "mqtt_port": 1883,
+    "web_port": 8787
+  },
+  "relay": {
+    "node_id": "RELAY-01",
+    "upstream_ip": "192.168.50.20",
+    "downstream_ip": "192.168.60.1",
+    "tcp_forward_port": 1883,
+    "forward_to": "192.168.50.10:1883"
+  },
+  "terminal": {
+    "node_id": "TERM-01",
+    "downstream_ip": "192.168.60.20",
+    "direct_broker": "mqtt://192.168.50.10:1883",
+    "relay_broker": "mqtt://192.168.60.1:1883"
+  },
+  "mqtt": {
+    "username": "relay",
+    "password_env": "DEVICE_TOKEN"
+  }
+}
