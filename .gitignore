@@ -13,3 +13,4 @@ firmware/**/include/secrets.h
 artifacts/
 *.tsbuildinfo
 *.log
+docs/双摄像头无线中继方案/buffer/

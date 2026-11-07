@@ -1,0 +1,407 @@
+% Compile engine: xelatex
+% Compile jobname: wireless_plan
+% Compile from: buffer/compile with the absolute path to this source.
+\documentclass[UTF8,a4paper,11pt,fontset=windows]{ctexart}
+\usepackage[margin=20mm,top=20mm,bottom=19mm,headheight=15pt]{geometry}
+\usepackage{fontspec,booktabs,tabularx,array,multirow,enumitem,xcolor,fancyhdr,lastpage}
+\usepackage{tikz,tcolorbox,amsmath,graphicx,xurl}
+\usetikzlibrary{arrows.meta,positioning,calc,fit}
+\usepackage[unicode,colorlinks=true,urlcolor=teal!65!black,linkcolor=teal!65!black]{hyperref}
+\definecolor{navy}{HTML}{163047}
+\definecolor{teal}{HTML}{087F8C}
+\definecolor{pale}{HTML}{EEF5F7}
+\definecolor{muted}{HTML}{526370}
+\definecolor{amber}{HTML}{9C5B0D}
+\hypersetup{pdftitle={双摄像头无线中继方案敲定与完整材料清单},pdfauthor={项目方案整理},pdfsubject={双路720p25视频、双无线中继与完整BOM}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt}
+\setlength{\emergencystretch}{2em}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.36}
+\setlist[itemize]{leftmargin=1.4em,itemsep=3pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=4pt,topsep=3pt}
+\ctexset{section={format=\Large\bfseries\color{navy},beforeskip=3pt,afterskip=10pt},subsection={format=\normalsize\bfseries\color{teal},beforeskip=8pt,afterskip=4pt}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\color{muted}双摄像头无线中继 / 方案与采购}
+\fancyhead[R]{\small\color{muted}V1.0 · 2026-11-07}
+\fancyfoot[L]{\scriptsize\color{muted}方案冻结版；硬件性能待验收}
+\fancyfoot[R]{\small\thepage\ / \pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{{\small\nolinkurl{#1}}}
+\newcommand{\page}[2]{\clearpage\section*{#1\quad #2}\addcontentsline{toc}{section}{#1 #2}}
+\newcommand{\note}[2]{\begin{tcolorbox}[colback=pale,colframe=teal!30,boxrule=0.5pt,arc=1mm,left=9pt,right=9pt,top=7pt,bottom=7pt]\textbf{\color{navy}#1}\par #2\end{tcolorbox}}
+\newcommand{\tblstart}{\small}
+\newcommand{\source}[3]{\par\medskip\textbf{[#1] #2}\par {\footnotesize\url{#3}}\par}
+\begin{document}
+\thispagestyle{fancy}
+{\small\color{teal}\bfseries 方案敲定 / 双路正常视频 / 本地离线运行}\par\vspace{8pt}
+{\Huge\bfseries\color{navy}双摄像头无线中继}\par
+{\LARGE\bfseries\color{navy}方案敲定与完整材料清单}\par\vspace{9pt}
+依据项目需求书及仓库 \code{main@aecf9f1} 整理。本文确定采购方向、网络结构、软件改造范围和验收口径，可作为分工与询价依据。\par
+\note{敲定方案}{采购两套带 ESP32-C6 的 ESP32-P4-Function-EV-Board，配套 SC2336 摄像头；两台 GL-MT3000 分别承担 A、B 无线中继。Windows 电脑本地运行现有网页、MQTT、事件服务和 MediaMTX。ESP8266 只负责传感器、按钮与灯控。}
+\subsection*{必须达到的效果}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{28mm}Y@{}}\toprule
+项目 & 本次验收目标 \\\midrule
+两路视频 & 同时播放；\textbf{每路 1280×720、25 fps、连续 H.264}；能辨认现场人员、动作与设备。\\
+码率起点 & 每路约 2--3 Mbps，按现场清晰度调整；不以低帧率或图片轮播代替。\\
+单路径故障 & A 或 B 中继断电、单条回程失效后，设备自行换网；\textbf{15 秒内重新出图}。\\
+断公网 & 局域网、设备供电和本地电脑正常时，双路视频及灯控继续工作。\\
+扩展 & 编号、视频路径、端口、布局和安装位置预留至四路；四路性能另验。\\\bottomrule
+\end{tabularx}\par
+\subsection*{采购预算结论}
+全新购入控制 AP 时，材料估算 \textbf{1741--2719 元}；加 150--250 元预备费，为 \textbf{1891--2969 元}。复用合格 AP 时，含预备费约 \textbf{1771--2749 元}。电脑、开发人工与运费不在上述材料合计中。全部价格为规划估算，尚非商家报价。
+
+\textbf{当前已完成：}需求与源码核对、开源资料核验、方案及 BOM 编制、文档编译检查。\textbf{尚未完成：}实板视频、双路并发、无线故障切换与稳定性测试；本文没有填入虚构的通过结果。
+
+{\small\color{muted}阅读索引：范围与选型 2 页；拓扑和地址 3--4 页；视频与恢复 5--6 页；采购和接线 7--9 页；仓库与接口改造 10--11 页；开源参考 12 页；实施 13 页；验收 14--15 页；来源 16 页。}
+
+\page{01}{范围取舍与器件选择}
+\subsection*{原需求保留什么，更新什么}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{30mm}Y Y@{}}\toprule
+事项 & 原需求书 & 本版处理 \\\midrule
+图像 & 至少 1 fps 图片保底，高清多路暂不做 & 更新为双路 720p25 连续 H.264；删除图片保底验收。\\
+中继 & 一台单跳中继，人工切换可接受 & A、B 两台中继；每条路径仍为单跳，终端自动换 SSID。\\
+恢复 & 上游恢复后 10 秒内重连 & 本版以故障发生至新鲜视频恢复 \(\leq\)15 秒为主口径；记录各阶段耗时。\\
+终端业务 & 环境量、告警、灯控及执行回执 & 保留；用单独 ESP8266 实现，不挤占视频处理。\\
+三维场景 & 实际路径、离线标记、事件 & 保留，增加两个独立摄像头节点，路径随证据更新。\\
+实体结构 & 终端及中继均有打印外壳 & 两摄像头独立打印壳；中继保留原厂壳、加打印支架。\\
+工期 & 7 个自然日 & 作为样机推进表；新增双路编码与切换，须按实测关口推进，不能承诺原工期必达。\\\bottomrule
+\end{tabularx}\par
+\subsection*{ESP8266 为什么不承担视频}
+ESP8266 适合低速传感、联网和灯控，缺少本方案所需的摄像头采集与 H.264 硬件编码链路。普通 ESP32-CAM 常用 JPEG/MJPEG，也不列为双路 720p25 的主选。购买两块廉价摄像头板，并不能解决连续高清视频与中继恢复问题。
+
+P4 具备摄像头接口和 H.264 硬件编码能力。官方 RTSP 例程已有 P4 的 H.264 配置；其 SC2336 默认模式是 1920×1080、25 fps。[R3--R5] 本项目需要把实际处理链调整为 1280×720，并在接收端核实，不能只改网页标签。官方编码器性能数据只证明编码环节能力，不能代替无线、双路和浏览器的整体验收。
+\note{购买的是完整摄像头套装}{指定 ESP32-P4-Function-EV-Board、板载 C6、PSRAM、SC2336、匹配的摄像头转接板及 FPC 排线。C6 已在板上，不重复购买独立模块；不要用 OV2640 或任意 MIPI 摄像头替换。板版本须与所选官方例程支持列表核对。}
+\textbf{保障边界：}至少一条路径仍有足够容量，系统才可能恢复。无线完全隔绝、两条链路同时失效、共用 AP 或电脑故障时，本方案不能继续回传。弱网可测、可恢复，无法保证任意差的信号下仍有正常视频。
+
+\page{02}{双无线路径与真实转发}
+\begin{center}
+\begin{tikzpicture}[>=Latex,font=\small,box/.style={draw=teal!70,fill=pale,rounded corners=2pt,align=center,minimum height=13mm,text width=39mm},route/.style={->,thick,draw=teal}]
+\node[box,minimum height=36mm] (devices) at (0,0) {CAM-01 / P4+C6\\CAM-02 / P4+C6\\SC2336 连续视频\\[4pt]TERM-01 / ESP8266\\传感、按钮、警示灯};
+\node[box] (a) at (5,1.6) {RELAY-A / GL-MT3000\\2.4 GHz 下游 AP};
+\node[box] (b) at (5,-1.6) {RELAY-B / GL-MT3000\\2.4 GHz 下游 AP};
+\node[box,text width=29mm] (ap) at (11.5,0) {控制端 AP\\5 GHz 接入};
+\node[box,text width=29mm] (pc) at (11.5,-3.1) {Windows 电脑\\视频 / MQTT / 网页};
+\node[align=center,font=\scriptsize,text=muted] at (2.65,0) {2.4 GHz\\择一接入};
+\draw[route] (devices.north east) -- (a.west);
+\draw[route,dashed] (devices.south east) -- (b.west);
+\draw[route] (a.east) -- node[above,sloped,font=\scriptsize]{5 GHz 无线回程 A} (ap.north west);
+\draw[route] (b.east) -- node[below,sloped,font=\scriptsize]{5 GHz 无线回程 B} (ap.south west);
+\draw[route,<->] (ap.south) -- node[right,font=\scriptsize]{本地网线} (pc.north);
+\end{tikzpicture}
+\end{center}
+{\small 实线示意当前选 A；虚线为可切换的 B。每台终端一次只接入一个 SSID，可以分别选路。图示位置不代表覆盖距离。}
+\subsection*{路由器设置}
+\begin{enumerate}
+\item 控制 AP 开启固定的 5 GHz SSID；优先选当地法规允许的非 DFS 信道，关闭会导致演示期间变动的自动信道功能。
+\item A、B 用 5 GHz STA 接入控制 AP；分别启用 2.4 GHz AP，下游 SSID 为 \code{RELAY_A_24} 和 \code{RELAY_B_24}。密码预置到终端，选择互不重叠的 2.4 GHz 信道。
+\item A、B 使用不同 LAN 网段，并配置 NAT／路由及应用代理。首台路由器先验证双频 AP+STA 能同时工作，再复制到另一台。
+\item 终端不保存控制 AP 的直连凭据。电脑关闭 Wi-Fi、热点、VPN 及其他测试绕行接口，只接控制 AP 的网线。
+\end{enumerate}
+\subsection*{证明业务确实经过中继}
+视频经所选中继的 RTSP TCP 代理，传感与灯控经其 MQTT/HTTP 代理；记录中继编号、连接和转发字节。单独验证 A 时暂禁备用 B，停用 A 转发后业务应断开。自动恢复测试再启用 B。这两种测试分开记录，避免把备用路径的成功误判成 A 仍在转发。
+\note{共同故障点仍然存在}{两条无线回程汇聚到同一个控制 AP 与电脑。它们属于本次演示条件，不属于冗余保障；电脑到 AP 的网线没有跨越任一失效回程。}
+
+\page{03}{地址、端口和连接方向}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{29mm}p{43mm}Y@{}}\toprule
+设备 & 规划地址 & 备注 \\\midrule
+控制 AP & \code{192.168.50.1/24} & 无公网也保持局域网与 DHCP 正常。\\
+Windows 电脑 & \code{192.168.50.10} & 固定地址／租约；本地服务绑定该网卡。\\
+中继 A & 上游 \code{192.168.50.20}\newline 下游 \code{192.168.60.1} & 上游固定租约；下游网段 /24。\\
+中继 B & 上游 \code{192.168.50.21}\newline 下游 \code{192.168.70.1} & 上游固定租约；下游网段 /24。\\
+CAM-01 & A: \code{192.168.60.11}\newline B: \code{192.168.70.11} & 按其 C6 STA MAC 绑定两份租约。\\
+CAM-02 & A: \code{192.168.60.12}\newline B: \code{192.168.70.12} & 身份按设备编号，不能用 IP 代替编号。\\
+TERM-01 & A: \code{192.168.60.20}\newline B: \code{192.168.70.20} & ESP8266 的 MAC 独立绑定。\\
+四路预留 & A/B 子网中的 .13、.14 & 对应 CAM-03、CAM-04；不先购买备用板。\\\bottomrule
+\end{tabularx}\par
+\subsection*{通过 NAT 访问下游摄像头}
+摄像头作为 RTSP 服务端监听 \code{8554}。电脑无法仅凭下游私网地址跨过路由器默认防火墙；需要显式设置以下代理。\textbf{视频强制 RTSP over TCP interleaved}，使媒体和控制均走同一 TCP 连接，不能照搬为仅转发 RTSP 控制端口而丢弃 RTP/UDP。
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{39mm}Y@{}}\toprule
+入口 & 实际转发目标 \\\midrule
+A/B 上游 \code{:8551} & 该中继下游 CAM-01 的 \code{:8554}；\code{:8552} 对应 CAM-02。\\
+A/B 上游 \code{:8553/8554} & 预留 CAM-03/04；防止与路由器其他服务占用冲突。\\
+下游网关 \code{:1883} & 代理至电脑 \code{192.168.50.10:1883} 的现有本地 MQTT。\\
+下游网关 \code{:8787} & 代理至电脑 \code{:8787}；健康探测必须穿透到电脑，不能本地假应答。\\\bottomrule
+\end{tabularx}\par
+\textbf{防火墙：}上游视频入口仅放行电脑 .50.10；下游允许终端访问网关控制代理。Windows 放行本地 HTTP 与 MQTT 服务、MediaMTX 的 WebRTC 信令及媒体端口；不向互联网暴露。
+
+\textbf{稳定地址：}MediaMTX 发布 \code{cam01}、\code{cam02}。CAM-01 接入 A 时，源为 \code{rtsp://192.168.50.20:8551/live}；切 B 后改为 .50.21 同端口。\code{/live} 是拟定路径，须与最终固件实际 URL 对齐。两条源配置分别维护，切一路不重启全部服务。
+
+\page{04}{连续视频链路与性能口径}
+\begin{center}
+\begin{tikzpicture}[>=Latex,font=\small,b/.style={draw=teal,fill=pale,align=center,rounded corners,text width=33mm,minimum height=17mm}]
+\node[b] (p) {P4 + SC2336\\采集 / 缩放 / H.264};
+\node[b,right=5mm of p] (r) {A 或 B\\TCP 视频代理};
+\node[b,right=5mm of r] (m) {电脑 MediaMTX\\RTSP → WebRTC};
+\node[b,right=5mm of m] (v) {浏览器双视频\\解码 / 展示 / 统计};
+\draw[->,thick] (p)--(r);\draw[->,thick] (r)--(m);\draw[->,thick] (m)--(v);
+\end{tikzpicture}
+\end{center}
+\subsection*{编码与网页播放}
+从官方 \code{rtsp_demo} 开始移植，不以仓库现有 JPEG 上传程序作为编码器。配置 H.264、720p、25 fps、每路 2--3 Mbps；优先无 B 帧、浏览器兼容的 profile，GOP 先取 25 帧，实测确认 SPS/PPS 与关键帧可在重连后及时取得。
+
+SC2336 官方示例原生 1080p25；首台实板需要验证支持的裁剪／缩放链路及编码输入格式，确保输出流真实为 1280×720。MediaMTX 转换传输协议，通常不转码；若 H.264 编码参数与浏览器不兼容，应修正端侧编码，不能假定 MediaMTX 会自动修好。
+
+浏览器以 WHEP/WebRTC 客户端接入本地流，用 \texttt{<video autoplay muted playsInline>} 显示。普通 \code{video} 标签不能直接播放 RTSP 地址。本次只传视频，关闭例程默认 AAC 音频，避免音轨兼容问题。固定本地 ICE 地址为电脑局域网地址并检查 UDP 端口，不依赖公网 STUN。图片轮询和逐帧写磁盘从主视频路径移除。
+\subsection*{带宽需要留多少}
+两路编码净载荷约 \(2\times(2\text{--}3)=4\text{--}6\) Mbps，另有传输开销、重传与控制。\textbf{建议每条完整无线转发路径先测得至少 20 Mbps 应用层有效吞吐}，这是本项目的容量预检目标，不是路由器标称速率或已测性能。任一路径应能单独承载两摄像头；不能只测两条路径各带一路。
+
+当有效带宽低于两路需求时，先调整部署位置、信道或码率，并重新验清晰度。25 fps 不作为可牺牲项；容量仍不足则判为未通过。扩为四路后的 8--12 Mbps 视频净载荷，需要重新测单路径容量和浏览器并发。
+\subsection*{怎样证明是正常视频}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{30mm}Y@{}}\toprule
+观察项 & 取值办法与限制 \\\midrule
+实际帧率 & 用 \code{getStats()} 的 \code{framesDecoded} 增量除以时间；每路分别统计 10 秒窗口。编码配置、SDP 或 HTTP 自报帧率不能作验收结果。\\
+分辨率／码率 & 解码统计及 \code{videoWidth/videoHeight} 交叉核对；接收字节差值计码率，不把链路协商速率当业务速率。\\
+画面新鲜度 & \code{requestVideoFrameCallback} 更新最后展示帧时间。超过 3 秒无新帧即标离线／冻结，保留最后时间。\\
+画质与延迟 & 同时拍摄走动人员、设备标牌及可见计时器；现场记录可辨性。端到端延迟用同画面计时方法，未同步时钟不直接相减。\\\bottomrule
+\end{tabularx}\par
+
+\page{05}{自动切网和故障恢复}
+终端本地保存 A、B 的 SSID 与凭据；摄像头由 P4/C6 联网程序决定切换，ESP8266 独立运行同类状态机。\textbf{故障恢复不依赖电脑经失效链路发出换网命令。}
+\begin{center}
+\begin{tikzpicture}[>=Latex,font=\small,b/.style={draw=teal,fill=pale,rounded corners,align=center,text width=61mm,minimum height=11mm}]
+\node[b] (n) {连接当前 SSID，业务正常\\每秒请求一次电脑端健康接口};
+\node[b,below=7mm of n] (f) {连续三次无有效应答\\记录故障起点并断开当前 SSID};
+\node[b,below=7mm of f] (s) {接入备用 SSID，取得 DHCP 地址\\重连 MQTT，报告实际中继及本机地址};
+\node[b,below=7mm of s] (u) {后端验证新路径，更新该路 RTSP 源\\MediaMTX 重新拉流，浏览器收到新鲜帧};
+\node[b,below=7mm of u] (k) {记录恢复耗时，保持当前路径\\人工触发回切，避免反复切网};
+\draw[->,thick] (n)--(f);\draw[->,thick] (f)--(s);\draw[->,thick] (s)--(u);\draw[->,thick] (u)--(k);
+\end{tikzpicture}
+\end{center}
+\subsection*{计时和重试规则}
+探测以 1 秒周期执行，每次带序号，建议超时小于一个周期，并限制并发；三次失败约需 3 秒。\textbf{15 秒总目标从人为故障发生开始，到浏览器恢复新鲜帧结束}，包括探测、关联、DHCP、注册、拉流与等待关键帧，不能从后端收到切换通知才开始计时。
+
+备用也失败时，界面保持离线；终端在 A、B 间受控重试，例如每条失败后等待 3 秒，限制日志与缓存。重连后丢弃过期控制命令；新命令带唯一 ID，防止重复执行。电脑持续记录源更新与解码状态，避免旧连接覆盖新路径。
+\subsection*{故障分类决定处理}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{34mm}Y@{}}\toprule
+场景 & 应有表现 \\\midrule
+中继断电 & Wi-Fi 关联丢失，终端换网；另一摄像头若走正常路径应继续显示。\\
+回程中断、下游仍在 & RSSI 可能正常，但电脑健康探测失败，仍应触发换网。\\
+仅公网断开 & 局域网健康接口可达，不触发无意义切网，业务持续。\\
+仅某路编码／拉流异常 & 对该流告警、重建视频会话；网络健康时不应把编码问题循环误判为换网问题。\\\bottomrule
+\end{tabularx}\par
+
+\page{06}{完整 BOM：主设备与供电}
+\textbf{计价规则：}人民币，2026-11-07 规划估算；表内均无已确认商家报价。询价需确认板卡版本、配件、含税及运费。区间用于预算，不表示一定可以买到该价。低价未包含摄像头的裸板不能与整套比较。
+
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{9mm}Y p{12mm}r r@{}}\toprule
+编号 & 材料及配置要求 & 数量 & 单价/元 & 小计/元 \\\midrule
+M01 & \textbf{ESP32-P4/C6 摄像头套装}：Function-EV-Board，例程支持板版、PSRAM、SC2336、适配板、FPC 全齐 & 2 套 & 350--550 & 700--1100 \\
+M02 & \textbf{GL-MT3000} 双频中继路由器；含原配电源，A、B 各一台 & 2 台 & 320--430 & 640--860 \\
+M03 & 控制端双频 AP/路由器，5 GHz 接入与电脑 LAN 同网；含电源，可优先复用 & 1 台 & 120--220 & 120--220 \\
+M04 & ESP8266 D1 mini 或 NodeMCU，带 USB 下载接口；锁定具体型号后接线 & 1 块 & 15--25 & 15--25 \\
+M05 & 摄像头独立稳压 USB 电源；按板手册／商家确认，预算按 5V、\(\geq\)2A 等级，不误接高压 & 2 个 & 20--35 & 40--70 \\
+M06 & 摄像头 USB 数据线，接口匹配、支持下载，不能用仅充电线 & 2 根 & 8--15 & 16--30 \\
+M07 & ESP8266 独立 5V USB 电源，建议 \(\geq\)1A，确认警示灯总电流 & 1 个 & 10--18 & 10--18 \\
+M08 & ESP8266 USB 数据线，Micro-USB/Type-C 与实际板卡匹配 & 1 根 & 5--10 & 5--10 \\\midrule
+ & \textbf{本页小计（新购控制 AP）} & & & \textbf{1546--2333} \\\bottomrule
+\end{tabularx}\par
+\subsection*{避免重复买和漏买}
+\begin{itemize}
+\item P4 套装已含 C6，不另列无线模块。板载 USB 下载可用时不强制购买 USB-TTL；如商家不含适配板或排线，必须补齐并重新核价。
+\item GL-MT3000 使用 \textbf{5V/3A} Type-C 供电，使用随附适配器及原配线；不使用预算中摄像头的 5V/2A 电源替代。[R6]
+\item 控制 AP 的电源按其具体型号配齐；本表假定包含。电脑已有网口可直接接线，没有网口则另列 USB 千兆网卡，估算增购45--80元并重新核预算。
+\item M05/M06 若套装已附且规格合格，扣除重复采购；不得据此直接扣掉整套供电成本。建议询价单分别列含与不含配件价格。
+\end{itemize}
+\note{采购顺序}{先买一套 P4 摄像头做首台验证；路由器可先用一台验证代理。确认 720p25 编码、网页播放和实际 Wi-Fi 吞吐后，再下第二套同版本订单。最终完整系统仍需表中两套摄像头及两台中继。}
+
+\page{07}{外围材料、预算合计与扩展}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{9mm}Y p{12mm}r r@{}}\toprule
+编号 & 材料及规格 & 数量 & 单价/元 & 小计/元 \\\midrule
+A01 & DHT22 模块，3.3V 工作，DATA 上拉至 3.3V & 1 个 & 15--25 & 15--25\\
+A02 & 常开按钮、状态 LED、220\,$\Omega$ 限流及备用电阻包 & 1 套 & 8--15 & 8--15\\
+A03 & 5V 低功耗警示灯，采购时填写额定电流 & 1 个 & 10--20 & 10--20\\
+A04 & 3.3V 逻辑可可靠驱动的 MOSFET 模块，带栅极下拉；若无须补电阻 & 1 个 & 8--18 & 8--18\\
+A05 & 端子、杜邦线、合适线径电源线、热缩管 & 1 批 & 20--40 & 20--40\\
+A06 & 铜柱、螺丝、扎带、绝缘垫与防松固定件 & 1 批 & 10--20 & 10--20\\
+A07 & 必要散热件及去耦／储能电容；按装壳温升决定 & 1 批 & 10--25 & 10--25\\
+A08 & 摄像头独立打印外壳，含耗材与普通打印费用估算 & 2 套 & 20--40 & 40--80\\
+A09 & 中继打印支架，保留原厂壳及散热孔 & 2 套 & 10--20 & 20--40\\
+A10 & ESP8266 小控制盒，固定传感器、按钮与接线 & 1 套 & 10--20 & 10--20\\
+A11 & Cat5e/Cat6 成品网线，电脑连接控制 AP，另备一根 & 2 根 & 8--15 & 16--30\\
+A12 & 设备编号、接口和电源标签 & 1 批 & 3--8 & 3--8\\\midrule
+A13 & 8位合格插排，预留后续两路供电，可复用 & 1 个 & 25--45 & 25--45\\\midrule
+ & \textbf{本页小计} & & & \textbf{195--386}\\\bottomrule
+\end{tabularx}\par
+\vspace{5pt}
+\par\noindent\begin{tabularx}{\linewidth}{@{}Y r r@{}}\toprule
+预算项目 & 复用合格 AP & 新购控制 AP\\\midrule
+主设备与供电 & 1426--2113 & 1546--2333\\
+外围材料与装配 & 195--386 & 195--386\\
+\textbf{材料合计} & \textbf{1621--2499} & \textbf{1741--2719}\\
+单列预备费（不当作已花费） & 150--250 & 150--250\\
+\textbf{计划资金} & \textbf{1771--2749} & \textbf{1891--2969}\\\bottomrule
+\end{tabularx}\par
+{\small 插排若已具备可扣25--45元。不含电脑、开发人工、运费及工具；1500 元下限目前不能保证。若全购靠近估算上限，3000 元余量仅 31 元，应先合并运费并取得实价；超预算须重新核价，不能漏删必要配件。}
+\subsection*{增加到四路时再买}
+新增两套同版本 P4 摄像头 700--1100 元、电源 40--70 元、数据线 16--30 元、外壳 40--80 元及线材／固定件 10--30 元，增购估算 \textbf{806--1310 元}。不含可能的 AP、电脑或供电升级；四路单路径承载能力通过后再扩容。
+
+\page{08}{供电接线、安装与下单核对}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{33mm}Y@{}}\toprule
+支路 & 接线与检查 \\\midrule
+CAM-01 / CAM-02 & 各用独立 USB 电源接板卡指定供电口。镜头转接板和 FPC 断电插拔，核对接触面方向、锁扣和脚距。\\
+RELAY-A / B & 各自原配 5V/3A 供电，不经 ESP8266 或摄像头板转接取电。掉电测试只拔被测中继电源。\\
+ESP8266 控制盒 & 5V USB 接开发板；DHT22 从板上 3V3 取电。5V 警示灯通过 MOSFET 开关供电，按额定电流核算支路容量。\\
+共地与负载 & ESP8266、MOSFET、警示灯电源共地；无线独立摄像头不要求拉信号地线。感性灯具或继电器线圈另配保护，优先选低功耗 LED 灯。\\\bottomrule
+\end{tabularx}\par
+\subsection*{ESP8266 建议引脚表（选定板型后复核丝印）}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{27mm}p{31mm}Y@{}}\toprule
+功能 & 建议引脚 & 接法 \\\midrule
+DHT22 DATA & D2 / GPIO4 & 模块 VCC=3.3V；上拉不接 5V，采样周期 \(\geq\)2 秒。\\
+告警按钮 & D6 / GPIO12 & 常开按钮接 GND，输入内部上拉，软件消抖。\\
+警示灯控制 & D5 / GPIO14 & 接 3.3V 兼容 MOSFET 输入；灯正极接 5V，负极按模块接输出。\\
+普通状态 LED & 可与灯控同逻辑显示 & 独立 LED 串 220\,$\Omega$ 电阻；确认模块输入电流，禁止 GPIO 直接驱动 5V 警示灯。\\\bottomrule
+\end{tabularx}\par
+\textbf{注意：}D1 mini 的 D 编号不等于 GPIO 编号；避开 GPIO0/2/15 启动绑带功能。仓库 ESP32 的 GPIO25/26/27 不能照搬。心跳独立按 1 秒更新，不因 DHT22 的 2 秒采样阻塞网络。
+\subsection*{下单前逐项核对}
+\begin{enumerate}
+\item 商家给出板卡完整型号、版本、内存、SC2336 型号、适配板与 FPC 照片，确认能运行所选官方 P4 例程；两套型号一致。
+\item 所有电源、数据线、镜头、支架和打印费用是否包含；路由器是否随附 5V/3A 原配供电；控制 AP 能否离线工作。
+\item MOSFET 的导通条件按 3.3V 实测或资料确认；填写警示灯额定电流，不能只看模块宣传的最大安培数。
+\item 壳体给镜头、无线天线和散热留空间；固定后检查镜头无遮挡、排线不过折、接线有应力释放。预留另两处安装及插座位置，不让薄线串供多台。
+\end{enumerate}
+
+\page{09}{现有仓库能复用哪些内容}
+审阅基线为 \code{aecf9f1a88a68d898c69ec67cb9b9a0629918f6a}，提交主题为 \texttt{feat: deliver relay twin platform}。[R2] 现有 React、Three.js、Express、WebSocket、Aedes MQTT 与 SQLite 可以保留。这里只核对源码，没有重新执行仓库构建或硬件测试。
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{41mm}Y@{}}\toprule
+位置与证据 & 对本方案的影响／改造 \\\midrule
+\code{firmware/esp32-camera/}\newline\code{src/main.cpp}，24/38/61 行 & \code{FRAME_INTERVAL_MS = 1000}，VGA 注释为 \code{stable at 1 FPS}，自报 \code{x-frame-rate: 1}。这是逐张 JPEG 上传，须用 P4 H.264 固件替换主视频路径。\\
+\code{src/types.ts}，64--85 行\newline\code{server/state.ts}，114 行 & 单个 \code{CameraState} 和 \code{camera} 槽；新帧会覆盖同一状态。增加按设备编号索引的多路状态，保留旧字段过渡。\\
+\code{server/http.ts}，49--71 行 & JPEG 写最新图片到磁盘，并读取客户端自报 fps。视频改走 MediaMTX；HTTP 只保留业务、健康与可选截图接口。\\
+\code{src/App.tsx}，32--44 行 & 单个 \code{img} 画面，存在模拟 SVG 和 LIVE 标记。新增双路 WebRTC 播放器，真实断流时显示离线。\\
+\code{src/TwinScene.tsx} & 依赖固定 TERM-01、RELAY-01、CONTROL-01 路径。改为 CAM-01/02、RELAY-A/B 及各自真实连接。\\
+\code{device-agents/}\newline\code{relay-agent.mjs} & 已有 MQTT/HTTP 代理思路；编号需可配置，补 RTSP TCP 转发与路径证明。TCP \code{data} 次数只能算数据块，不能当无线包数。\\\bottomrule
+\end{tabularx}\par
+\subsection*{集成时保留的业务}
+保留唯一命令 ID、灯控执行回执、事件记录与回放框架；MQTT 收到消息不等于灯已动作。ESP8266 需新增适配固件，移植消息格式、超时、去重和 ACK，不能直接编译仓库 ESP32 引脚配置来用。
+
+路由器部署需验证 Node 版本、内存与依赖。当前代理脚本导入 \code{mqtt}，\textbf{仅安装 Node 不会自动安装该包}；必须预装离线依赖，或将纯 TCP 转发改为轻量原生代理。保持转发行为和指标口径一致，不为视频在路由器上新增解码／转码。
+\note{本文件规定改造，不声称已完成}{本次交付为方案 PDF 和可编辑 TeX；没有修改、提交或推送合作仓库。现有 README、文档中的单摄像头／1 fps 表述，需要在后续实现时同步更新。}
+
+\page{10}{多路接口、网页和三维联动}
+\subsection*{按摄像头保存状态}
+新增 \code{cameras[]}，每一路包含下列字段；旧 \code{camera} 临时映射 CAM-01，待旧页面迁移后移除。任何一条状态更新都不能重置另一条的播放会话。
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{45mm}Y@{}}\toprule
+字段建议 & 来源与用途 \\\midrule
+\code{nodeId}, \code{streamPath},\newline\mbox{\code{playUrl}} & 稳定编号、\code{cam01/cam02} 及本地播放入口，预留 cam03/04。\\
+\code{status}, \code{lastFrameAt} & 根据浏览器新帧与服务端状态判断；标明时间来源。状态含连接中、实时、冻结、离线。\\
+\code{actualFps}, \code{width}, \code{height}, \code{bitrate} & 来自接收／解码统计，缺失用 null；不把配置值复制成实测值。\\
+\code{activeRelay}, \code{localIp},\newline\mbox{\code{routeEvidenceAt}} & 终端上报接入信息，并与对应中继连接／转发日志交叉核对。证据过期时标未知。\\
+\code{sourceMode}, \code{reconnectMs}, \code{testId} & 区分真实／模拟，关联故障轮次、恢复耗时；模拟模式要明显提示。\\\bottomrule
+\end{tabularx}\par
+\subsection*{页面调整}
+\begin{itemize}
+\item 默认双画面并排，显示各自编号、实际帧率、分辨率、当前中继及最后帧时间；支持放大单路，四路时 2×2 布局。双路性能验收期间两路均保持解码播放。
+\item 正常 LIVE 依赖新帧持续到达。超过 3 秒无新帧撤下 LIVE 并覆盖冻结／离线提示；可保留带时间的最后帧，禁止悄悄替换为模拟画面。
+\item Three.js 为两摄像头分别画到 A/B 的实际路径；终端关联、源配置和转发证据一致后才亮起。路径不明时显示未知，不用全局健康状态代替各路状态。
+\item 指标面板分清：探测包 RTT/丢包、应用字节吞吐、TCP 数据块、解码掉帧。\code{framesDropped} 是接收端指标，不能直接称为摄像头采集丢包率。
+\end{itemize}
+\subsection*{控制与事件}
+继续使用仓库 MQTT 接口，命令包含 \code{commandId}、目标、动作与过期时间。ESP8266 执行后回传相同 ID 的结果，超时／失败显示原因，重复 ID 不重复动作。切网后先丢弃过期命令再恢复订阅。
+
+后端记录故障发生、探测失败、备用关联、设备注册、视频源变化、首次恢复新帧、灯控 ACK 等事件。恢复时间由同一测试时钟或有明确对齐的录像统计；软件事件可作辅助，不能用未同步设备的时间戳冒充端到端耗时。
+\textbf{本地部署：}网页资源、字体、Node 依赖、MediaMTX、固件和路由器配置离线备齐。版本匹配的 MediaMTX 配置将 WebRTC 信令与媒体地址显式指向本地网卡；控制 API 如需启用，仅绑定本机，由后端改源，不给浏览器开放管理权限。
+
+\page{11}{可借鉴的开源项目与版本}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{36mm}Y@{}}\toprule
+项目 & 本项目用途、核验版本与许可证 \\\midrule
+Espressif\newline\textbf{esp-webrtc-solution}\newline\code{solutions/rtsp_demo} & P4 采集、H.264 与 RTSP 起点；核验提交 \code{dc3ab9281379}。P4 默认配置为 1080p25，采用 TCP RTSP，需改造至真实 720p25。例程源文件标注 CC0／公共领域；组件存在不同许可证，不能把整个仓库统称 MIT。\\
+Espressif\newline\textbf{esp\_h264} & P4 硬件 H.264 编码；组件页面核验版本 \textbf{1.5.0}，源码参考 \code{08a0b6588fa0}。组件 LICENSE 为 Apache-2.0；依赖另核。性能表不等于双路无线实测。\\
+Espressif\newline\textbf{esp-hosted-mcu} & P4 通过 C6 联网，沿用官方例程选择的 MCU 侧托管方案；核验提交 \code{9effd51fbc13}，Apache-2.0。旧 \code{esp-hosted} 总入口区分 Linux 与 MCU，不能照搬 Linux 驱动说明。\\
+\textbf{MediaMTX}\newline bluenviron & Windows 本地 RTSP 拉流、WebRTC 发布及多路径管理；核验提交 \code{ef25331963fb}，MIT。API／配置字段以所选构建版本为准，离线保存其二进制与对应配置。\\
+现有合作仓库 & 复用 React/Three.js/Node、MQTT、事件体系；\code{aecf9f1a88a6}。本次未确认根级通用许可证，按团队授权使用，不擅自标为 MIT 或对外再授权。\\\bottomrule
+\end{tabularx}\par
+\subsection*{许可证需要分层看}
+\code{esp-webrtc-solution/components/av_render/LICENSE} 为 Espressif Modified MIT，含“仅与 Espressif Systems 产品结合使用”的限制。其他组件、音视频库与预编译依赖须分别保留声明；例程文件的 CC0 不覆盖全部依赖。[R9]
+
+ESP-IDF、ESP-Hosted MCU 与组件版本不能从本页各取“最新”任意拼装。第一次成功构建后，提交依赖锁文件、子模块提交、板卡版本、工具链和烧录参数；上述提交用于本次资料核验，不表示它们已经组成一个通过编译和硬件测试的版本组合。
+\subsection*{下载与复用方式}
+项目链接见第 16 页。先复现官方 P4 RTSP 例程，再加入自动切网与状态上报。MediaMTX 以独立本地服务运行，保留稳定的流名称，网页只负责 WebRTC 播放与统计。移交时附上实际使用版本、哈希、许可证与离线包，避免演示当天依赖下载。
+\note{能够借鉴的部分已经存在}{官方已有 P4 H.264 RTSP 链路，MediaMTX 已支持 RTSP/WebRTC。仍需开发的工作集中在 720p25 实机调通、双中继自动恢复、当前网页多路化与真实指标采集。}
+
+\page{12}{实施顺序与停止条件}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{20mm}Y p{47mm}@{}}\toprule
+阶段 & 要做的事 & 进入下一阶段的条件 \\\midrule
+1. 首台验证 & 核对 P4 板版、摄像头及 C6；复现官方 RTSP；调整720p25，接本地 MediaMTX 与浏览器。 & 接收端实测真实分辨率和 25 fps，现场动作清楚；保留日志与录像。未过不批量买第二套。\\
+2. 单路径 & 一台 GL-MT3000 建 2.4/5 GHz 双频转发；放通视频代理、MQTT/HTTP；测完整路径吞吐。 & 无线业务真实过中继；目标 \(\geq\)20 Mbps 容量预检；断代理能使业务中断。\\
+3. 两路并发 & 加第二套同版本摄像头，拆分状态和播放器；加入 ESP8266 灯控。 & 同一中继独自承载两路 720p25；双路播放、探测与10次灯控同时通过。\\
+4. 备用路径 & 配 B 网段和租约；两路均通过 B 独立运行，再实现终端自主切换及逐路改源。 & A/B 任一单故障，故障发生至新帧恢复 \(\leq\)15 秒；无命令绕过失效链路。\\
+5. 装配验收 & 冻结壳体、标签、电源；完成离线包、1小时稳定与异常测试。 & 第14--15页逐项填写原始结果；未通过项有原因与修复复测。\\\bottomrule
+\end{tabularx}\par
+\subsection*{七天样机安排（需有器件和并行分工）}
+第 1 天完成首台视频和一条转发路径；第 2--3 天做双路、灯控与接口迁移，并送印外壳；第 4--5 天实现备用路径、三维节点和事件联动；第 6 天装壳、断公网和稳定性测试；第 7 天修复并完成三轮演示。首台验证不通过时，应调整实现或工期，不能在验收当天降成图片或低帧率。
+
+\textbf{建议分工：}硬件／固件人员负责 P4、ESP8266 和路由器；前端／后端人员负责多流状态、WebRTC、指标和三维路径；两人共同做故障测试与录像。装壳前测量实际板孔和温升，不仅依据商品图画壳。
+\subsection*{后续实现应交付的文件}
+\begin{itemize}
+\item P4 与 ESP8266 源码、固件、板卡说明；A/B/AP 配置备份、IP 表和端口规则。
+\item 网页及后端源码、MediaMTX 版本与配置；Windows 启停脚本和离线依赖；程序上电自启说明。
+\item 外壳可编辑源文件、STEP/STL、打印方向及参数；完整接线图、实际 BOM 发票／报价。
+\item 每轮原始探测与视频统计、故障时间记录、稳定性日志、实物演示录像及最终验收表。
+\end{itemize}
+\textbf{本次方案交付}为本文 PDF、可编辑 TeX、输入需求副本和资料／检查记录。上面的软硬件工程交付清单属于后续实施工作。
+
+\page{13}{双路视频与业务验收表}
+\textbf{统一前提：}同一电脑和浏览器、两路均可见并持续解码、两路分别计数；记录板卡／固件、场地、距离、障碍、SSID、码率、测试编号。以下均为验收目标，当前全部待实测。
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{9mm}p{28mm}Y p{18mm}@{}}\toprule
+号 & 测试项 & 操作与通过条件 & 结果 \\\midrule
+T01 & 真实连续视频 & 两路拍摄不同现场动作，确认非预录、非图片轮询；各自解码尺寸 1280×720。 & 待实测\\
+T02 & 双路 25 fps & 两路同时运行60秒；每路各10秒窗口平均解码帧率 \(\geq\)24.5 fps，按25fps采样容差记录，不允许持续降至20/15fps；同时检查固件输出目标为25。 & 待实测\\
+T03 & 清晰度 & 用固定距离与照明拍摄走动人员、手部动作、设备标牌；验收双方能辨认，记录样片、曝光及码率。只靠分辨率数字不判通过。 & 待实测\\
+T04 & 单路径容量 & A、B 各自单独承载两路；应用有效吞吐预检目标 \(\geq\)20 Mbps，实际双路仍须满足 T01--03。不能用Wi-Fi协商速率填写。 & 待实测\\
+T05 & 灯控并发 & 双视频开启，发送10次开／关；每条唯一ID，终端执行并返回ACK，单次3秒超时；对照实物动作。 & 待实测\\
+T06 & 小数据质量 & 128字节探测，每秒10包，双视频开启；60秒统计RTT P95 \(\leq\)200ms，超时丢失率 \(\leq\)1\%；分列重复与乱序。 & 待实测\\
+T07 & 断公网 & 拔控制AP外网，不断局域网；双画面、传感和灯控保持运行，刷新网页也能加载本地资源。 & 待实测\\
+T08 & 单摄像头离线 & 断 CAM-01 电；该路3秒无新帧后撤LIVE、标离线，CAM-02继续播放，路径独立变化。 & 待实测\\
+T09 & 一小时稳定 & 连续60分钟双路播放及周期灯控，无需重启；统计每路帧率、卡顿、断流、内存与温升。中途计划故障另打标。 & 待实测\\\bottomrule
+\end{tabularx}\par
+{\small T02 的24.5阈值只给25fps测量计数留容差，不表示可将编码设为24fps；若单个窗口异常，保留原值并查明，禁止只挑最好窗口。}
+\subsection*{必须保存的原始数据}
+每秒保存 \code{framesDecoded}、接收字节、丢弃帧、尺寸及最后展示帧时间；探测包保存序号、发送和应答时刻、超时。RTT 用同端单调时钟计算。软件自报目标帧率、截屏与录屏自身帧率均不能代替每路接收统计。
+
+\page{14}{故障恢复、演示与签收}
+\par\noindent\begin{tabularx}{\linewidth}{@{}p{9mm}p{30mm}Y p{18mm}@{}}\toprule
+号 & 测试项 & 操作与通过条件 & 结果 \\\midrule
+F01 & A 回程故障 & 保留A下游Wi-Fi，切断其5GHz上联；终端根据电脑端探测失败自动换B，两路各自恢复新帧 \(\leq\)15秒。 & 待实测\\
+F02 & A 断电 & 两路先走A；拔A电源，自动接B并恢复；记录各路恢复时长和控制中断。 & 待实测\\
+F03 & B 对称故障 & 两路先走B，分别测试B回程失效及断电，确认A可独立承担两路。 & 待实测\\
+F04 & 稳定与人工回切 & A恢复后不自动来回跳；人工触发回切后更新路径和事件。至少三次故障恢复，保留全部轮次。 & 待实测\\
+F05 & 真实中继证明 & 禁用备用路径，停止所选中继业务代理，业务应中断；恢复转发后恢复。此项不拿自动切换来替代。 & 待实测\\
+F06 & 场地覆盖收益 & 如需证明遮挡收益：同位置直连/中继各60秒，同负载比较；原目标直连丢失 \(\geq\)20\%或不可达，中继 \(\leq\)1\%。受控断链只证明恢复逻辑，不能证明覆盖收益。 & 待实测\\\bottomrule
+\end{tabularx}\par
+\subsection*{三分钟实物演示脚本}
+\begin{enumerate}
+\item 0:00--0:35 展示双路现场动作、实测帧率与摄像头编号，点选三维节点，说明当前走 A。
+\item 0:35--1:05 按实体告警按钮，网页定位 TERM-01；网页开灯，实物警示灯亮起并收到执行 ACK。
+\item 1:05--1:50 切断 A 的无线回程；画面短暂停顿并显示恢复中，终端自行接 B，展示每路恢复秒数及新路径证据。
+\item 1:50--2:25 恢复 A 电源／上联，保持 B 不自动回切；按需人工回切一次，说明这次是人工操作。
+\item 2:25--3:00 拔公网，刷新本地网页，继续查看双路及灯控；展示事件与本轮实测记录。
+\end{enumerate}
+\note{本阶段签收结论}{本文件只冻结实现方向与采购清单。硬件到位后逐项填写实际值、原始日志路径、通过／未通过和复测日期。所有必测项通过，才可宣称双路720p25与15秒恢复已经实现。}
+\textbf{记录栏：}测试人\underline{\hspace{25mm}}\quad 日期\underline{\hspace{25mm}}\quad 固件/版本\underline{\hspace{31mm}}\par
+\textbf{未通过及整改：}\underline{\hspace{132mm}}\par
+\underline{\hspace{162mm}}
+
+\page{15}{来源与复核入口}
+{\small 核验日期：2026-11-07。仓库与开源资料按下列提交／版本审阅；本地资料快照及清单保存在 \code{buffer/sources/}。产品页用于规格核对，不作为采购报价。}
+\begingroup\small\setlength{\parskip}{4pt}
+\par\medskip\textbf{[R1] 用户需求与后续冻结要求}\par
+本地原始文件为《数据通信中继与三维联动平台需求书》，副本随本文保存。双路720p25、P4/C6、双中继、预算及15秒目标按本次确认更新。
+\source{R2}{合作仓库；审阅提交 aecf9f1a88a68d898c69ec67cb9b9a0629918f6a}{https://github.com/ErenYeager-LJS/Wireless-Commnication/tree/aecf9f1a88a68d898c69ec67cb9b9a0629918f6a}
+\source{R3}{ESP32-P4-Function-EV-Board 官方用户指南}{https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/user_guide.html}
+\source{R4}{Espressif RTSP 例程；提交 dc3ab928137916d7b214a9a8ffe52e0e81794471}{https://github.com/espressif/esp-webrtc-solution/tree/dc3ab928137916d7b214a9a8ffe52e0e81794471/solutions/rtsp_demo}
+核对文件：\code{main/settings.h}、\code{main/rtsp.c}、\code{sdkconfig.defaults.esp32p4}。SDP／配置自报帧率不直接作实测依据。
+\source{R5}{esp\_h264 官方组件 1.5.0；源码许可证 Apache-2.0}{https://components.espressif.com/components/espressif/esp_h264/versions/1.5.0/readme}
+\source{R6}{GL-MT3000 官方规格与使用指南}{https://www.gl-inet.com/products/gl-mt3000/}
+\url{https://docs.gl-inet.com/router/en/4/user_guide/gl-mt3000/}\par
+供电按5V/3A配齐；规格页在本次资料保存重试时返回限流，未留完整快照；使用指南已保存。下单再核对设备铭牌、适配器与当前版本。
+\source{R7}{MediaMTX；提交 ef25331963fb31e3db368e191c573f60d26b1a73；MIT}{https://github.com/bluenviron/mediamtx/tree/ef25331963fb31e3db368e191c573f60d26b1a73}
+核对 \code{README.md}、\code{mediamtx.yml}、\code{LICENSE}；实际实施选定匹配的Windows构建，不假定所有版本配置字段相同。
+\source{R8}{ESP-Hosted MCU；提交 9effd51fbc133e06aa4ff042c46d4f71483b13b0；Apache-2.0}{https://github.com/espressif/esp-hosted-mcu/tree/9effd51fbc133e06aa4ff042c46d4f71483b13b0}
+总入口 \url{https://github.com/espressif/esp-hosted} 已区分 MCU 与 Linux 路线。
+\source{R9}{WebRTC 组件许可证示例；Espressif Modified MIT}{https://github.com/espressif/esp-webrtc-solution/blob/dc3ab928137916d7b214a9a8ffe52e0e81794471/components/av_render/LICENSE}
+\endgroup
+\vfill
+{\footnotesize\color{muted}文档复现：XeLaTeX；从 buffer/compile 编译本 TeX 两次，jobname=wireless\_plan。所有编译、提取与页面检查文件留在本结果目录的 buffer 中。本文不包含已执行的硬件性能报告。}
+\end{document}
