@@ -1,0 +1,69 @@
+{
+  "source": "esp_image_relay_demo / single OV5647 H264 + wireless controls + person detection",
+  "files": [
+    {
+      "path": "receiver/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "receiver/server.py",
+      "sha256": "413ffdf6e28d04e0cbb3e9346c384a4ba9c7aacc29b20675c906d3c8f0a38b9a"
+    },
+    {
+      "path": "receiver/h264_tcp.py",
+      "sha256": "011586cd7b86276c75be8461dce5e412a25c3a87734cc53c09e8c68adf49044e"
+    },
+    {
+      "path": "receiver/relay_udp.py",
+      "sha256": "649275181e6cce344f6a82d812f3dfcace10ebeaa9842a87bf3a93739acda83d"
+    },
+    {
+      "path": "receiver/person_detection.py",
+      "sha256": "c97b9b1be930a8056c147b5f1612b8a370f23dc1bd4da49b1452e743aaffbf98"
+    },
+    {
+      "path": "receiver/models/manifest.json",
+      "sha256": "d7b67d96d6565c850f6fef6c513540776f2134412bbc04e046b0bce3cdfa87ae"
+    },
+    {
+      "path": "receiver/models/LICENSE-YOLOX.txt",
+      "sha256": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"
+    },
+    {
+      "path": "Soft/PC/server.py",
+      "sha256": "42ac8fe73e98fac25829ad9a19b3874f3245fe787ae5fef6fdecf5d6ca8b9140"
+    },
+    {
+      "path": "Soft/PC/control.py",
+      "sha256": "96fe835d6e7404246ec1af29ca55e451d033e5969c06060aa514e57429d9776c"
+    },
+    {
+      "path": "Soft/PC/wireless.py",
+      "sha256": "ed2d8e91b8d21e498205facb955189c2ad4176133027a44769b09513683f3489"
+    },
+    {
+      "path": "Soft/PC/requirements.txt",
+      "sha256": "75707b9bfb016ed23911a67692f901e376b3bb13e2b9203505e3258f8001f3f1"
+    },
+    {
+      "path": "Soft/tools/setup_person_detection.py",
+      "sha256": "5d4a73b030989f759947a8ad15a8d655dfeea70493688a6ad5bc2f0264bbaa74"
+    },
+    {
+      "path": "receiver/static/index.html",
+      "sha256": "ed2b3a7b8898b2108c3aee464fc56de442c7a1b4fcfa93f9e794a680445f3dc0"
+    },
+    {
+      "path": "receiver/static/app.js",
+      "sha256": "2c2f1bd9cf6174a592b3f3751688ceb68eb8d6fa6321a2e1f9f457dda8c53ad2"
+    },
+    {
+      "path": "receiver/static/style.css",
+      "sha256": "2467efa94951d14910988a9922dbcd63f8b2a2daa76e09387f43d10af2c51910"
+    },
+    {
+      "path": "receiver/static/tokens.css",
+      "sha256": "e20ef685d28a8e88360f8db8545c2889738eef4c055098a9f1509e6669fc214b"
+    }
+  ]
+}

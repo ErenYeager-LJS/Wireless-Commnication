@@ -11,6 +11,8 @@
     "start": "tsx server/index.ts",
     "test": "tsx --test tests/**/*.test.ts",
     "test:visual": "node scripts/visual-check.mjs",
+    "test:esp-ui": "node scripts/check-esp-ui.mjs",
+    "test:flight-ui": "node scripts/check-flight-ui.mjs",
     "check": "tsc -b --pretty false"
   },
   "dependencies": {

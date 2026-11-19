@@ -1,8 +1,16 @@
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid, Html, Line, OrbitControls } from '@react-three/drei';
-import { useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import type { Health, LinkMode, NodeState } from './types';
+import type { Health, LinkMode, NodeState, ReceiverStatus } from './types';
+import { AirborneCamera } from './AirborneCamera';
+import { FLIGHT_HEIGHT, flightAnchors, flightSignal } from './flight-link';
+import { ArchitecturalLighting, CampusEnvironment } from './CampusEnvironment';
+import { SCENE as S } from './scene-theme';
+
+const INITIAL_CAMERA = {position: [34, 28, 39] as [number, number, number], fov: 45};
+const LIVE_TARGET: [number, number, number] = [0, 4.5, 0];
+const DEMO_TARGET: [number, number, number] = [0, 2.5, 0];
 
 const positions: Record<string, [number, number, number]> = {
   'TERM-01': [-15, 1.1, 9], 'RELAY-01': [0, 8.2, -1], 'CONTROL-01': [15, 1.1, -9],
@@ -21,7 +29,7 @@ const buildings: BuildingSpec[] = [
   { name: '能源保障站', position: [0, 0, 14], size: [7, 5], floors: 2, color: '#8f9694', accent: '#d6bb58' },
 ];
 
-function CampusBuilding({ spec, exploded, transparent }: { spec: BuildingSpec; exploded: boolean; transparent: boolean }) {
+function CampusBuilding({ spec, exploded, transparent, live }: { spec: BuildingSpec; exploded: boolean; transparent: boolean; live?: boolean }) {
   const floorHeight = 1.05;
   return <group position={spec.position}>
     {Array.from({ length: spec.floors }, (_, floor) => {
@@ -43,9 +51,11 @@ function CampusBuilding({ spec, exploded, transparent }: { spec: BuildingSpec; e
       </group>;
     })}
     <mesh position={[0, -.35, 0]} receiveShadow><boxGeometry args={[spec.size[0] + .8, .7, spec.size[1] + .8]} /><meshStandardMaterial color="#2b3430" roughness={.9} /></mesh>
-    <Html position={[0, spec.floors * (floorHeight + (exploded ? .65 : 0)) + .65, 0]} center distanceFactor={22} style={{ pointerEvents: 'none' }}>
-      <div className="building-label">{spec.name}</div>
-    </Html>
+    {!(live && (spec.name === '综合指挥中心' || spec.name === '数据中心')) && <Html position={[0, spec.floors * (floorHeight + (exploded ? .65 : 0)) + .65, 0]} center zIndexRange={[2, 0]} style={{ pointerEvents: 'none' }}>
+      <div className={`building-label ${live && (spec.name === '综合指挥中心' || spec.name === '数据中心') ? 'link-building-label' : ''}`}>
+        {live && spec.name === '综合指挥中心' ? '中继站 · 中间综合楼' : live && spec.name === '数据中心' ? '接收中心 · 右侧数据楼' : spec.name}
+      </div>
+    </Html>}
   </group>;
 }
 
@@ -109,14 +119,24 @@ function Drone() {
   </>;
 }
 
-function Device({ node, health, selected, onSelect }: { node: NodeState; health: Health; selected: boolean; onSelect: () => void }) {
+function Device({ node, health, selected, onSelect, position, live }: { node: NodeState; health: Health; selected: boolean; onSelect: () => void; position?: [number, number, number]; live?: boolean }) {
   const ref = useRef<THREE.Mesh>(null);
-  const color = !node.online ? '#e5534b' : health === 'degraded' ? '#f1b84b' : '#42d38b';
+  const color = !node.online ? S.red : health === 'degraded' ? S.amber : S.green;
   useFrame(({ clock }) => { if (ref.current) ref.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 3) * .07); });
-  return <group position={positions[node.nodeId] ?? [0, 1, 0]} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
-    <mesh ref={ref} castShadow><octahedronGeometry args={[node.role === 'relay' ? .65 : .5]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={selected ? 1.7 : .65} /></mesh>
+  return <group position={position ?? positions[node.nodeId] ?? [0, 1, 0]} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
+    {live ? <>
+      <mesh position={[0,-1.05,0]}><boxGeometry args={[1.4,.32,1.2]}/><meshStandardMaterial color={S.paper} roughness={.5} metalness={.35}/></mesh>
+      <mesh position={[0,-.25,0]}><cylinderGeometry args={[.06,.09,1.5,10]}/><meshStandardMaterial color={S.metal} metalness={.75} roughness={.3}/></mesh>
+      {[-1,1].map(side=><mesh key={side} position={[side*.42,.12,0]} rotation-z={side*.13}>
+        <boxGeometry args={[.16,.85,.24]}/><meshStandardMaterial color={S.paper} roughness={.4}/>
+      </mesh>)}
+      <mesh ref={ref} position={[0,.56,0]}><sphereGeometry args={[.12,12,8]}/><meshBasicMaterial color={color}/></mesh>
+    </> : <mesh ref={ref} castShadow><octahedronGeometry args={[node.role === 'relay' ? .65 : .5]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={selected ? 1.7 : .65} /></mesh>}
     <mesh rotation-x={-Math.PI / 2}><ringGeometry args={[.7, .78, 32]} /><meshBasicMaterial color={color} transparent opacity={.7} side={THREE.DoubleSide} /></mesh>
-    <Html position={[0, .95, 0]} center distanceFactor={16} style={{ pointerEvents: 'none' }}><div className={`scene-label ${selected ? 'selected' : ''}`}><b>{node.nodeId}</b><span>{node.online ? (node.role === 'relay' ? '中继节点' : node.role === 'terminal' ? '业务终端' : '控制端') : '离线'}</span></div></Html>
+    <Html position={[0, 1.35, 0]} center zIndexRange={[3, 0]} style={{ pointerEvents: 'none' }}><div className={`scene-label ${selected ? 'selected' : ''}`} data-node-id={node.nodeId}>
+      <b>{live ? <><span className="scene-full-name">{node.role === 'relay' ? '中继站 · 综合楼' : '接收中心 · 数据楼'}</span><span className="scene-short-name">{node.role === 'relay' ? '中继站' : '接收中心'}</span></> : node.nodeId}</b>
+      <span className="scene-node-detail">{live && node.role === 'relay' ? node.online ? '正在转发图像' : '等待中继路径' : node.online ? live ? '路由器 / 控制电脑' : (node.role === 'relay' ? '中继节点' : node.role === 'terminal' ? '业务终端' : '控制端') : '离线'}</span>
+    </div></Html>
   </group>;
 }
 
@@ -134,33 +154,144 @@ function SignalRoute({ mode, health, active }: { mode: LinkMode; health: Health;
   return <><Line points={points} color={color} lineWidth={active ? 5 : 2} dashed={!active} dashSize={.35} gapSize={.2} transparent opacity={active ? .95 : .35} />{active && <FlowDots points={points} color={color} />}</>;
 }
 
-function Campus({ nodes, mode, health, exploded, transparent, selected, onSelect }: SceneProps) {
+function Campus({ nodes, mode, health, exploded, transparent, selected, onSelect, videoPriority, video }: SceneProps) {
   const trees = [[-24, -14], [-20, -14], [-8, -14], [8, -15], [21, -15], [25, -12], [-24, 16], [-20, 17], [9, 18], [18, 18], [25, 17], [-25, 1], [25, -2]];
+  const anchors = flightAnchors(exploded);
   return <>
-    <color attach="background" args={['#071019']} /><fog attach="fog" args={['#071019', 38, 82]} />
+    <color attach="background" args={[videoPriority ? S.sky : '#071019']} /><fog attach="fog" args={videoPriority ? [S.sky, 180, 650] : ['#071019', 38, 82]} />
+    {videoPriority ? <><ArchitecturalLighting revision={`${exploded}:${transparent}`}/><CampusEnvironment exploded={exploded} transparent={transparent}/></> : <>
     <ambientLight intensity={.78} /><hemisphereLight args={['#d9eee4', '#1f2c27', 1.15]} />
-    <directionalLight position={[18, 28, 16]} intensity={2.35} color="#f0f4e8" castShadow shadow-mapSize={[2048, 2048]} />
+    <directionalLight position={[18, 28, 16]} intensity={2.35} color="#f0f4e8" castShadow shadow-mapSize={videoPriority ? [1024, 1024] : [2048, 2048]} />
     <mesh rotation-x={-Math.PI / 2} position={[0, -.72, 0]} receiveShadow><planeGeometry args={[74, 60]} /><meshStandardMaterial color="#17231d" roughness={1} /></mesh>
     <Road position={[0, -.69, 0]} size={[4, 55]} /><Road position={[0, -.68, 0]} size={[62, 4]} />
     <Road position={[-14, -.68, 0]} size={[2.5, 42]} /><Road position={[14, -.68, 0]} size={[2.5, 42]} />
-    {buildings.map((building) => <CampusBuilding key={building.name} spec={building} exploded={exploded} transparent={transparent} />)}
+    {buildings.map((building) => <CampusBuilding key={building.name} spec={building} exploded={exploded} transparent={transparent} live={videoPriority} />)}
     {trees.map(([x, z], index) => <Tree key={index} position={[x, -.68, z]} />)}
     <ParkingLot />
     <mesh position={[-24, -.65, 7]} rotation-x={-Math.PI / 2}><circleGeometry args={[4.2, 48]} /><meshStandardMaterial color="#315f6d" roughness={.38} metalness={.08} /></mesh>
     <mesh position={[-24, -.61, 7]} rotation-x={-Math.PI / 2}><ringGeometry args={[4.25, 4.6, 48]} /><meshStandardMaterial color="#727d78" /></mesh>
-    <Drone />
-    {nodes.map((node) => <Device key={node.nodeId} node={node} health={health} selected={selected === node.nodeId} onSelect={() => onSelect(node.nodeId)} />)}
-    <SignalRoute mode={mode} health={health} active={health !== 'offline' && health !== 'unknown'} />
-    <Grid position={[0, -.7, 0]} args={[76, 62]} cellSize={1} cellThickness={.25} cellColor="#385046" sectionSize={5} sectionThickness={.75} sectionColor="#63786e" fadeDistance={58} />
-    <OrbitControls makeDefault minDistance={24} maxDistance={68} maxPolarAngle={Math.PI / 2.04} target={[0, 2.5, 0]} />
+    </>}
+    {videoPriority ? <>
+      <AirborneCamera video={video} health={health} exploded={exploded} selected={selected === 'TERM-01'} onSelect={() => onSelect('TERM-01')} />
+      {nodes.filter(node => node.role !== 'terminal').map(node => <Device key={node.nodeId} node={node} health={health} live
+        position={node.role === 'relay' ? anchors.relay : anchors.receiver} selected={selected === node.nodeId} onSelect={() => onSelect(node.nodeId)} />)}
+    </> : <>
+      <Drone />
+      {nodes.map((node) => <Device key={node.nodeId} node={node} health={health} selected={selected === node.nodeId} onSelect={() => onSelect(node.nodeId)} />)}
+      <SignalRoute mode={mode} health={health} active={health !== 'offline' && health !== 'unknown'} />
+    </>}
+    {!videoPriority && <Grid position={[0, -.7, 0]} args={[76, 62]} cellSize={1} cellThickness={.25} cellColor="#385046" sectionSize={5} sectionThickness={.75} sectionColor="#63786e" fadeDistance={58} />}
+    <OrbitControls makeDefault minDistance={24} maxDistance={videoPriority ? 360 : 68} maxPolarAngle={Math.PI / 2.04} target={videoPriority ? LIVE_TARGET : DEMO_TARGET} />
   </>;
 }
 
 interface SceneProps {
   nodes: NodeState[]; mode: LinkMode; health: Health; exploded: boolean; transparent: boolean;
-  selected: string; onSelect: (id: string) => void;
+  selected: string; onSelect: (id: string) => void; videoPriority?: boolean; video?: ReceiverStatus | null;
 }
 
-export function TwinScene(props: SceneProps) {
-  return <Canvas shadows camera={{ position: [34, 28, 39], fov: 45 }} dpr={[1, 1.75]}><Campus {...props} /></Canvas>;
+function VideoPriorityFrames() {
+  const invalidate = useThree(s => s.invalidate);
+  useEffect(() => {
+    // The campus is illustrative: reserve CPU/GPU time for 720p video and inference.
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let frame: number;
+    const tick = () => {
+      if (!document.hidden && !reduced.matches && !document.querySelector('.esp-camera-modal[open]')) invalidate();
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [invalidate]);
+  return null;
 }
+
+function SceneRenderInfo({onDpr}: {onDpr:(value:number)=>void}) {
+  const last = useRef(0);
+  const gl = useThree(s=>s.gl);
+  const software = useRef(false);
+  const slowFrames = useRef(0);
+  useEffect(()=>{
+    const context=gl.getContext();
+    const debug=context.getExtension('WEBGL_debug_renderer_info');
+    const name=String(debug?context.getParameter(debug.UNMASKED_RENDERER_WEBGL):context.getParameter(context.RENDERER));
+    software.current=/swiftshader|llvmpipe|software|basic render/i.test(name);
+    gl.domElement.dataset.renderer=name;
+    onDpr(software.current ? .55 : Math.min(devicePixelRatio,1.25));
+  },[gl,onDpr]);
+  useFrame(({gl,clock},delta)=>{
+    if(delta>.05)slowFrames.current++;else slowFrames.current=Math.max(0,slowFrames.current-1);
+    if(slowFrames.current>40){
+      const next=Math.max(software.current?.45:.65,gl.getPixelRatio()*.85);
+      if(next<gl.getPixelRatio()-.01)onDpr(next);
+      slowFrames.current=0;
+    }
+    if(clock.elapsedTime-last.current<1)return;
+    last.current=clock.elapsedTime;
+    gl.domElement.dataset.sceneDrawCalls=String(gl.info.render.calls);
+    gl.domElement.dataset.sceneTriangles=String(gl.info.render.triangles);
+    gl.domElement.dataset.sceneTextures=String(gl.info.memory.textures);
+    gl.domElement.dataset.shadowUpdates=String(gl.shadowMap.autoUpdate);
+    gl.domElement.dataset.sceneDpr=String(gl.getPixelRatio());
+  });
+  return null;
+}
+
+function FitFlightView({video}: {video?: ReceiverStatus | null}) {
+  const {camera, size} = useThree();
+  const destination = useRef<THREE.Vector3 | null>(null);
+  const viewport = useRef('');
+  const signal = flightSignal(video);
+  const radiusBand = Math.ceil(signal.radius / 5) * 5;
+  const route = signal.route;
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const candidate = camera.clone();
+    const target = new THREE.Vector3(...LIVE_TARGET);
+    const angle = viewport.current ? camera.position.clone().sub(target).normalize() : new THREE.Vector3(34, 28, 39).normalize();
+    const center = route === 'relay' ? flightAnchors().relay : flightAnchors().receiver;
+    const bounds = [[-34, -.4, 26], [34, -.4, 26], [-34, -.4, -26], [34, -.4, -26], [0, 10, -1], [14, 6, -10],
+      ...Array.from({length: 16}, (_, i) => [center[0] + Math.cos(i * Math.PI / 8) * radiusBand,
+        FLIGHT_HEIGHT + 3, center[2] + Math.sin(i * Math.PI / 8) * radiusBand])];
+    const margin = size.width < 450 ? 58 : 100;
+    const maxX = Math.max(.25, 1 - margin * 2 / size.width);
+    for (let distance = 55; distance <= 360; distance *= 1.08) {
+      candidate.position.copy(target).addScaledVector(angle, distance);
+      candidate.lookAt(target); candidate.updateMatrixWorld();
+      if (bounds.every((p,index) => {
+        const screen = new THREE.Vector3(...p).project(candidate);
+        const terrain=index<4;
+        return Math.abs(screen.x) <= (terrain ? .95 : maxX) && screen.y < .68 && screen.y > (terrain ? -.95 : -.55);
+      })) break;
+    }
+    const key = `${size.width}:${size.height}`;
+    if (viewport.current !== key) {
+      camera.position.copy(candidate.position);
+      camera.lookAt(target); camera.updateMatrixWorld();
+      destination.current = null;
+    } else destination.current = candidate.position.clone();
+    viewport.current = key;
+  }, [camera, size.width, size.height, radiusBand, route]);
+  useFrame((_, delta) => {
+    if (!destination.current) return;
+    camera.position.lerp(destination.current, 1 - Math.exp(-Math.min(delta, .1) * 5));
+    if (camera.position.distanceToSquared(destination.current) < .0001) destination.current = null;
+  });
+  return null;
+}
+
+export const TwinScene = memo(function TwinScene(props: SceneProps) {
+  const [pixelRatio,setPixelRatio]=useState(1);
+  return <Canvas shadows camera={INITIAL_CAMERA} dpr={props.videoPriority ? pixelRatio : [1, 1.75]}
+    gl={{antialias:true, toneMapping:THREE.ACESFilmicToneMapping, toneMappingExposure:1.05}}
+    onCreated={({gl})=>{if(props.videoPriority){gl.shadowMap.autoUpdate=false;gl.shadowMap.needsUpdate=true;}}}
+    frameloop={props.videoPriority ? 'demand' : 'always'}>
+    {props.videoPriority && <><FitFlightView video={props.video} /><VideoPriorityFrames /><SceneRenderInfo onDpr={setPixelRatio}/></>}<Campus {...props} />
+  </Canvas>;
+}, (a, b) => a.mode === b.mode && a.health === b.health && a.exploded === b.exploded &&
+  a.transparent === b.transparent && a.selected === b.selected && a.onSelect === b.onSelect && a.videoPriority === b.videoPriority &&
+  a.video?.online === b.video?.online && a.video?.enabled === b.video?.enabled && a.video?.rssi === b.video?.rssi && a.video?.route === b.video?.route &&
+  a.nodes.length === b.nodes.length && a.nodes.every((n, i) => {
+    const other = b.nodes[i];
+    return n.nodeId === other.nodeId && n.role === other.role && n.online === other.online;
+  }));

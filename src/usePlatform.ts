@@ -10,7 +10,14 @@ export function usePlatform() {
     let active = true;
     let retry: number | undefined;
     let socket: WebSocket | undefined;
-    api.snapshot().then((data) => active && setSnapshot(data)).catch(() => undefined);
+    let lastMessage = Date.now();
+    const invalidate = () => setSnapshot(previous => previous?.esp ? {...previous, health: 'offline', camera: {...previous.camera, frameUrl: null},
+      nodes: previous.nodes.map(node => ({...node, online: false})),
+      esp: {...previous.esp, receiverAvailable: false, error: '平台连接中断，正在重连',
+        control: previous.esp.control ? {...previous.esp.control, wireless_online: false} : null,
+        video: previous.esp.video ? {...previous.esp.video, online: false} : null,
+        detection: previous.esp.detection ? {...previous.esp.detection, fresh: false, boxes: []} : null}} : previous);
+    api.snapshot().then((data) => {if (active) {lastMessage = Date.now(); setSnapshot(data);}}).catch(() => undefined);
 
     const connect = () => {
       const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -18,16 +25,19 @@ export function usePlatform() {
       socket.onopen = () => active && setConnected(true);
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data) as ServerMessage;
+        lastMessage = Date.now();
         if ((message.type === 'snapshot' || message.type === 'state') && active) setSnapshot(message.data);
       };
       socket.onclose = () => {
         if (!active) return;
         setConnected(false);
+        invalidate();
         retry = window.setTimeout(connect, 1_500);
       };
     };
     connect();
-    return () => { active = false; clearTimeout(retry); socket?.close(); };
+    const watchdog = setInterval(() => {if (Date.now() - lastMessage > 2_000) invalidate();}, 500);
+    return () => { active = false; clearTimeout(retry); clearInterval(watchdog); socket?.close(); };
   }, []);
   return { snapshot, connected };
 }

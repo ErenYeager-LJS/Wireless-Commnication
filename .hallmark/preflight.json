@@ -1,0 +1,11 @@
+{
+  "date": "2026-11-19",
+  "scope": "Additive live ESP integration into existing UI",
+  "sources": ["src/styles.css", "src/TwinScene.tsx", "package.json"],
+  "font": "Existing Segoe UI / Microsoft YaHei / Consolas retained for local offline use",
+  "palette": "Dark blue-green campus with green accent; portable OKLCH tokens in tokens.css",
+  "framework": "React 19 / Vite 7 / Three.js / React Three Fiber",
+  "motion": "Existing Three.js drone and animated topology retained; video-priority cadence for ESP mode",
+  "preserved": ["global stylesheet", "campus", "original components and modes", "branding", "building interactions"],
+  "introduced": ["ESP bridge", "live camera panel", "semantic tokens", "responsive overrides", "native modal enlargement"]
+}

@@ -1,0 +1,182 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4
+ * macrostructure: telemetry workbench · tone: technical · anchor hue: green
+ * Existing campus composition and global styles are preserved.
+ */
+@import '../tokens.css';
+html, body { overflow-x: clip; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button[aria-busy=true] { cursor: progress; }
+button:disabled { cursor: not-allowed; }
+.scene-heading small { display: block; color: var(--color-muted); font-size: 10px; margin-top: var(--space-2xs); }
+.panel-note { margin: var(--space-xs) var(--space-sm); color: var(--color-muted); font-size: var(--text-xs); line-height: 1.6; }
+.panel-actions { display: flex; align-items: center; gap: var(--space-xs); }
+.icon-button { display: grid; place-items: center; width: 36px; min-height: 40px; border: 0; border-radius: var(--radius-control); color: var(--color-muted); background: transparent; cursor: pointer; }
+.icon-button:hover { color: var(--color-accent); background: var(--color-raised); }
+.esp-platform { --green: var(--color-accent); --muted: var(--color-muted); --white: var(--color-ink); }
+.esp-platform .left-rail { width: 360px; }
+.esp-platform .right-rail { width: 310px; }
+.esp-platform .scene-wrap { left: 384px; right: 334px; }
+.esp-platform .scene-wrap { container-type: inline-size; }
+.esp-platform .scene-tools { right: var(--space-sm); }
+.esp-platform .scene-legend { left: var(--space-sm); }
+.esp-platform .panel { flex-shrink: 0; }
+.esp-platform .panel-title { min-height: 42px; }
+.esp-platform .panel-title em { font-size: 10px; }
+.esp-platform .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.esp-platform .metric-tile { min-width: 0; }
+.esp-platform .metric-tile strong { font-family: var(--font-mono); font-size: 16px; overflow-wrap: anywhere; }
+.esp-platform .metric-tile span, .esp-platform .path-proof span { font-size: var(--text-xs); }
+.esp-platform .metric-tile strong small { font-size: 10px; }
+.esp-platform .path-proof b { font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+.esp-platform .event b { font-size: var(--text-xs); }
+.esp-platform .event small { font-size: 10px; }
+.esp-platform .event time { font-size: 9px; }
+.esp-platform .device-list button { min-height: 54px; }
+.esp-platform .device-list button > span small, .esp-platform .device-list button em { font-size: 10px; }
+.esp-platform .compare-head { grid-template-columns: repeat(4, minmax(0, 1fr)); font-size: 10px; }
+.esp-platform .compare-row { grid-template-columns: repeat(4, minmax(0, 1fr)); font-size: var(--text-xs); min-height: 36px; }
+.esp-platform .compare-row span { min-width: 0; overflow-wrap: anywhere; }
+.esp-platform .three-modes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.esp-platform .segmented button { height: 40px; font-size: var(--text-sm); white-space: nowrap; }
+.esp-platform .control-actions.esp-actions { grid-template-columns: minmax(0, 1fr); }
+.esp-platform .esp-actions button { min-height: 44px; font-size: var(--text-sm); }
+.esp-platform .command-status { gap: var(--space-xs); flex-wrap: wrap; font-size: 10px; }
+.esp-platform .command-status b { font-size: 10px; font-weight: normal; }
+.esp-hardware p { padding: 0 var(--space-sm); font-size: var(--text-sm); margin: var(--space-xs) 0; color: var(--color-ink); }
+.esp-hardware small { display: block; padding: 0 var(--space-sm) var(--space-sm); color: var(--color-muted); font-size: var(--text-xs); }
+.esp-camera .camera-feed { aspect-ratio: 16 / 9; background: var(--color-paper); }
+.esp-camera .camera-feed::after { content: none; }
+.esp-camera .camera-feed .esp-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform: rotate(180deg); }
+.esp-video.not-loaded { visibility: hidden; }
+.camera-empty { position: absolute; inset: 0; display: flex; flex-direction: column; gap: var(--space-xs); align-items: center; justify-content: center; text-align: center; padding: var(--space-md); color: var(--color-muted); }
+.camera-empty strong { font-family: var(--font-display); font-size: var(--text-md); font-weight: 500; }
+.camera-empty span { font-size: var(--text-xs); line-height: 1.6; }
+.person-overlay { position: absolute; inset: 0; pointer-events: none; overflow: clip; }
+.person-box { position: absolute; border: 2px solid var(--color-accent); border-radius: var(--radius-control); }
+.person-box > span { display: block; width: max-content; max-width: calc(100% + 4px); overflow: hidden; position: absolute; left: -2px; top: -2px; padding: 2px var(--space-2xs); color: var(--color-accent-ink); background: var(--color-accent); border-radius: 3px; font-size: var(--text-xs); white-space: nowrap; }
+.esp-video-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: var(--space-sm); gap: var(--space-xs); border-bottom: 1px solid var(--color-line); }
+.esp-video-metrics > div { min-width: 0; }
+.esp-video-metrics span { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+.esp-video-metrics strong { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px; margin-top: var(--space-2xs); font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 500; overflow-wrap: anywhere; }
+.esp-video-metrics small { color: var(--color-muted); font-family: var(--font-body); font-size: 10px; }
+.esp-camera .camera-meta { font-size: 10px; }
+.esp-detection { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); padding: var(--space-2xs) var(--space-sm); border-top: 1px solid var(--color-line); }
+.esp-detection > div { display: grid; gap: var(--space-2xs); }
+.esp-detection b { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-sm); font-weight: 550; }
+.esp-detection > div > span { color: var(--color-muted); font-size: var(--text-xs); }
+.esp-switch { display: flex; align-items: center; gap: var(--space-xs); flex-shrink: 0; min-height: 44px; background: transparent; border: 0; color: var(--color-ink); font-size: var(--text-xs); cursor: pointer; }
+.esp-switch > i { display: block; width: 34px; height: 20px; padding: 3px; background: var(--color-raised); border: 1px solid var(--color-line); border-radius: var(--radius-pill); }
+.esp-switch > i::after { content: ''; display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--color-muted); transition: transform var(--dur-short) var(--ease-out); }
+.esp-switch[aria-checked=true] > i { background: var(--color-accent); }
+.esp-switch[aria-checked=true] > i::after { background: var(--color-accent-ink); transform: translateX(14px); }
+.esp-switch:disabled { opacity: .5; }
+.detection-foot { display: flex; justify-content: space-between; gap: var(--space-xs); flex-wrap: wrap; padding: 0 var(--space-sm) var(--space-xs); color: var(--color-muted); font-size: 10px; }
+.esp-camera-modal { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--color-ink); }
+.esp-camera-modal::backdrop { background: var(--color-overlay); }
+.esp-camera.camera-expanded { position: fixed; inset: 76px max(24px, calc((100vw - 1200px) / 2)) 44px; width: auto; max-width: none; display: flex; flex-direction: column; background: var(--color-panel); overflow: auto; }
+.esp-camera.camera-expanded .camera-feed { flex: 1; min-height: 0; aspect-ratio: auto; }
+.camera-expanded .esp-video-metrics, .camera-expanded .esp-detection, .camera-expanded .detection-foot, .camera-expanded .camera-meta, .camera-expanded .panel-title { flex-shrink: 0; }
+/* Readable labels remain in screen pixels; they no longer shrink with camera distance. */
+.building-label, .drone-label, .scene-label, .flight-label { font-family: var(--font-body); color: var(--color-ink); background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius-control); padding: 6px 10px; font-size: var(--text-sm); line-height: 1.5; white-space: nowrap; }
+.building-label { font-weight: 550; }
+.scene-label b, .drone-label b, .flight-label b { display: block; font: 600 var(--text-sm)/1.5 var(--font-body); }
+.scene-label span, .drone-label span, .flight-label span { display: block; font-size: var(--text-xs); color: var(--color-muted); }
+.flight-label { text-align: center; border-color: var(--color-accent); transform: translateY(-20px); }
+.flight-label b { color: var(--color-accent); }
+.scene-label[data-node-id="CONTROL-01"] { transform: translateY(30px); }
+.esp-platform .building-label { background: var(--color-panel); border-color: var(--color-line); font-size: 12px; font-weight: 400; padding: 4px 8px; opacity: .85; }
+.esp-platform .scene-label, .esp-platform .flight-label { box-shadow: 0 5px 18px var(--color-shadow); }
+.esp-platform .flight-label { border-left: 2px solid var(--color-accent); }
+.flight-summary { position: absolute; left: var(--space-sm); right: var(--space-sm); max-width: 460px; bottom: 100px; padding: var(--space-sm); border: 1px solid var(--color-line); border-radius: var(--radius-panel); background: var(--color-panel); pointer-events: none; }
+.flight-summary strong { display: block; color: var(--color-ink); font-size: var(--text-md); font-weight: 550; }
+.flight-summary span { display: block; margin-top: var(--space-2xs); color: var(--color-muted); font-size: var(--text-xs); line-height: 1.5; }
+.esp-platform .scene-heading span { font-size: 21px; }
+.esp-platform .scene-heading b, .esp-platform .scene-heading small { font: 400 var(--text-xs)/1.6 var(--font-body); }
+.esp-platform .panel-title { padding-inline: var(--space-sm); }
+.esp-platform .panel-title > span { font-size: var(--text-sm); font-weight: 600; }
+.esp-platform .panel-title em, .esp-platform .camera-meta, .esp-platform .detection-foot, .esp-platform .device-list button > span small, .esp-platform .device-list button em, .esp-platform .event time, .esp-platform .event small, .esp-platform .path-proof b, .esp-platform .compare-head, .esp-platform .command-status, .esp-platform .command-status b { font-size: var(--text-xs); }
+.esp-platform .device-list button > span b { font: 550 var(--text-sm)/1.5 var(--font-body); }
+.esp-platform .event b { font-size: var(--text-sm); }
+.esp-platform .event small { white-space: normal; max-width: none; line-height: 1.5; }
+.esp-platform .metric-tile strong { font-size: 20px; }
+.esp-platform .metric-tile strong small, .esp-platform .esp-video-metrics small, .esp-platform .camera-time, .esp-platform .live-mark { font-size: 12px; }
+.esp-platform .source-tag, .esp-platform .health-badge, .esp-platform .connection { font-size: var(--text-xs); }
+.esp-platform .scene-legend { font-size: var(--text-xs); }
+.esp-platform .selected-readout b { font: 550 var(--text-sm)/1.5 var(--font-body); }
+.esp-platform .selected-readout span, .esp-platform .selected-readout em, .esp-platform footer { font-size: var(--text-xs); }
+.esp-platform .esp-hardware small { font-size: var(--text-xs); }
+.esp-platform .three-modes button { font-size: var(--text-md); }
+.esp-platform .events-panel { min-height: 210px; }
+.scene-label .scene-short-name, .flight-label .scene-short-name { display: none; }
+.scene-label b .scene-full-name, .flight-label b .scene-full-name { color: inherit; font: inherit; }
+.flight-label > span .scene-full-name { display: inline; }
+.esp-platform .disclosure-panel { flex: 0 0 auto; }
+.disclosure-panel > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); min-height: 48px; padding: var(--space-sm); cursor: pointer; font: 550 var(--text-sm)/1.5 var(--font-body); color: var(--color-ink); list-style: none; }
+.disclosure-panel > summary::-webkit-details-marker { display: none; }
+.disclosure-panel > summary:hover { color: var(--color-accent); }
+.disclosure-panel > summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -3px; }
+.disclosure-panel[open] > summary > svg { transform: rotate(90deg); }
+.esp-platform .disclosure-panel > .panel { border: 0; border-radius: 0; background: transparent; }
+.disclosure-panel > .panel > .panel-title { display: none; }
+.rail-toggle { position: absolute; z-index: 21; top: 48%; display: grid; place-items: center; width: 28px; height: 58px; padding: 0; color: var(--color-ink); background: var(--color-panel); border: 1px solid var(--color-line); border-radius: var(--radius-control); cursor: pointer; }
+.rail-toggle:hover { color: var(--color-accent); }
+.rail-toggle-left { left: 372px; }
+.rail-toggle-right { right: 322px; }
+.esp-platform.left-collapsed .left-rail, .esp-platform.right-collapsed .right-rail { display: none; }
+.esp-platform.left-collapsed .scene-wrap { left: 12px; }
+.esp-platform.right-collapsed .scene-wrap { right: 12px; }
+.left-collapsed .rail-toggle-left { left: 0; }
+.right-collapsed .rail-toggle-right { right: 0; }
+@container (max-width: 850px) {
+  .esp-platform .building-label { display: none; }
+}
+@media (max-width: 1250px) and (min-width: 1101px) {
+  .esp-platform .left-rail { width: 320px; }
+  .esp-platform .right-rail { width: 280px; }
+  .esp-platform .scene-wrap { left: 344px; right: 304px; }
+  .rail-toggle-left { left: 332px; }
+  .rail-toggle-right { right: 292px; }
+  .esp-platform .selected-readout { display: none; }
+}
+@media (max-width: 1100px) {
+  body:has(.esp-platform) { overflow-y: auto; }
+  .esp-platform { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); height: auto; min-height: 100vh; overflow: visible; padding-bottom: var(--space-md); }
+  .esp-platform .topbar { position: sticky; top: 0; grid-column: 1 / -1; }
+  .esp-platform .scene-wrap { grid-column: 1 / -1; position: relative; inset: auto; height: 44vh; min-height: 320px; }
+  .esp-platform .scene-heading { top: var(--space-md); }
+  .esp-platform .scene-tools { right: var(--space-sm); top: var(--space-sm); }
+  .esp-platform .scene-legend { left: var(--space-sm); }
+  .flight-summary { left: var(--space-sm); right: var(--space-sm); bottom: 56px; }
+  .esp-platform .selected-readout { display: none; }
+  .rail-toggle { display: none; }
+  .esp-platform.left-collapsed .left-rail, .esp-platform.right-collapsed .right-rail { display: flex; }
+  .esp-platform .left-rail, .esp-platform .right-rail { position: static; width: auto; min-width: 0; display: flex; flex-direction: column; overflow: visible; padding: var(--space-xs); }
+  .esp-platform footer { position: static; grid-column: 1 / -1; flex-wrap: wrap; min-height: 38px; height: auto; padding: var(--space-xs); gap: var(--space-xs); font-size: 10px; }
+}
+@media (max-width: 700px) {
+  .esp-platform { grid-template-columns: minmax(0, 1fr); }
+  .esp-platform .topbar { padding-inline: var(--space-xs); grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs); }
+  .esp-platform .topbar time { display: none; }
+  .esp-platform .system-summary { flex-wrap: wrap; justify-content: flex-end; }
+  .esp-platform .system-summary .connection, .esp-platform .system-summary .source-tag { display: none; }
+  .esp-platform .brand > div span { display: none; }
+  .esp-platform .scene-heading { left: var(--space-sm); transform: none; text-align: left; max-width: calc(100% - 134px); }
+  .esp-platform .scene-heading span { font-size: 18px; }
+  .esp-platform .scene-heading b, .esp-platform .scene-heading small { font-size: 12px; }
+  .esp-platform .scene-tools button { width: 32px; min-height: 36px; }
+  .esp-platform .scene-tools { gap: 3px; }
+  .esp-platform .building-label { display: none; }
+  .scene-label, .flight-label { padding: 5px 7px; }
+  .scene-label .scene-full-name, .flight-label .scene-full-name, .flight-label > span .scene-full-name { display: none; }
+  .scene-label .scene-short-name, .flight-label .scene-short-name { display: block; color: inherit; font: inherit; }
+  .scene-label .scene-node-detail { display: none; }
+  .flight-label { transform: translateY(-32px); }
+  .scene-label[data-node-id="CONTROL-01"] { transform: translateY(18px); }
+  .esp-camera.camera-expanded { inset: var(--space-xs); }
+  .esp-camera.camera-expanded .camera-feed { min-height: 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

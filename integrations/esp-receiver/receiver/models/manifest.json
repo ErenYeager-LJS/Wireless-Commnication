@@ -1,0 +1,12 @@
+{
+  "file": "person-yolox.onnx",
+  "model": "OpenCV Zoo YOLOX-S COCO",
+  "source": "https://huggingface.co/opencv/object_detection_yolox/blob/78c368f74ce73ee28fc7a1be418a598c71b58b52/object_detection_yolox_2022nov.onnx",
+  "sha256": "c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063",
+  "size_bytes": 35858002,
+  "license": "Apache-2.0",
+  "license_file": "LICENSE-YOLOX.txt",
+  "upstream": "https://github.com/opencv/opencv_zoo/tree/main/models/object_detection_yolox",
+  "input": "1x3x640x640 float32 RGB 0..255; top-left letterbox 114",
+  "output": "1x8400x85 raw YOLOX; only COCO class 0 (person) is displayed"
+}

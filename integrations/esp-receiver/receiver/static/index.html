@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101114">
+  <title>Relay Studio · OV5647</title>
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <nav class="studio-nav" aria-label="主导航">
+    <a class="wordmark" href="#live" aria-label="Relay Studio 实时画面"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="14" rx="4"/><path d="m18 9 3-2v10l-3-2"/></svg>Relay <span>Studio</span></a>
+    <div class="nav-links"><a href="#live" aria-current="page">实时画面</a><a href="#events" id="history-link">连接记录</a></div>
+    <span class="local-label"><i></i>本地连接</span>
+  </nav>
+  <main class="studio" id="live">
+    <header class="studio-heading">
+      <div><h1>OV5647 实时画面</h1><p>单路采集，自适应中继传输。</p></div>
+      <div class="session-status"><span class="status-dot" id="global-dot"></span><span id="connection" role="status">等待摄像头</span></div>
+    </header>
+    <section class="link-bar" aria-label="实时传输路径">
+      <div class="link-intro"><span>当前链路</span><strong id="route">未连接</strong></div>
+      <div class="topology" id="topology" data-route="offline" aria-label="摄像头到电脑的传输路径">
+        <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="14" rx="4"/><path d="m18 9 3-2v10l-3-2"/></svg><span>OV5647</span></div>
+        <span class="wire"></span>
+        <div class="node relay-node"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10a10 10 0 0 1 14 0M8 13a6 6 0 0 1 8 0m-5 4h2M12 4v2"/><rect x="4" y="19" width="16" height="2" rx="1"/></svg><span>中继器 <small id="relay-node-state">待机</small></span></div>
+        <span class="wire"></span>
+        <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 13V5m10 8V5M7 17h.01M11 17h.01"/></svg><span id="router-name">路由器</span></div>
+        <span class="wire"></span>
+        <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span>本机</span></div>
+      </div>
+      <div class="link-signal"><span id="rssi">—</span><small>Wi-Fi 信号</small></div>
+    </section>
+    <div class="feeds">
+      <section class="feed" id="mipi-feed" aria-label="OV5647 摄像头">
+        <div class="feed-head"><div class="feed-title"><span class="camera-type">MIPI</span><h2>OV5647</h2></div><div class="feed-actions"><span class="feed-state" id="mipi-state">等待连接</span><button class="power-switch" data-camera="mipi" role="switch" aria-checked="true" aria-label="关闭 OV5647 传输" disabled><span class="switch-track"><span></span></span><span class="switch-label">开启</span></button></div></div>
+        <div class="screen"><img id="video" alt="OV5647 实时画面" hidden><div id="person-overlay" class="person-overlay" aria-hidden="true"></div><div class="empty" id="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="12" height="14" rx="4"/><path d="m18 9 3-2v10l-3-2"/></svg><strong id="empty-title">等待第一帧</strong><p id="empty-note">摄像头连接后自动显示画面</p></div><span class="live-badge" id="mipi-live" hidden><i></i>LIVE</span><span class="screen-format" id="mipi-resolution">—</span></div>
+        <div class="detection-bar" aria-label="人物检测"><div class="detection-summary"><strong>人物框选</strong><span id="person-state" role="status">连接检测服务…</span></div><div class="detection-actions"><span id="person-rate">—</span><button class="power-switch" id="person-toggle" role="switch" aria-checked="false" aria-label="开启人物框选" disabled><span class="switch-track"><span></span></span><span class="switch-label">关闭</span></button></div></div>
+        <div class="feed-metrics"><div class="metric"><span>接收帧率</span><strong><b id="mipi-fps">—</b><small>fps</small></strong></div><div class="metric"><span>帧丢失率 <button class="info-button" aria-label="查看帧丢失率说明" popovertarget="loss-info">i</button></span><strong><b id="mipi-loss">—</b><small>%</small></strong></div><div class="metric metric-count"><span>累计接收</span><strong><b id="received">0</b><small>帧</small></strong></div></div>
+        <div class="feed-foot"><span id="source">H.264 · 等待摄像头</span><span id="age">—</span></div><p class="camera-command" id="mipi-command" role="status"></p>
+      </section>
+    </div>
+    <section class="route-controls" id="route-controls" aria-label="切换控制" hidden>
+      <div class="route-control-title"><h2>连接方式</h2><p id="control-result" role="status">自动根据链路状态选择路径</p></div>
+      <div class="segmented" role="group" aria-label="选择连接方式"><button data-mode="auto" aria-pressed="false">自动切换</button><button data-mode="direct" aria-pressed="false">切回直连</button><button data-mode="relay" aria-pressed="false">切换到中继</button></div>
+      <div class="switch-gap"><span>最近切换间隔</span><strong id="gap">—</strong></div>
+    </section>
+    <details class="history" id="events"><summary><span>连接记录 <small>最近 100 条</small></span><span class="disclosure">＋</span></summary><div class="history-body"><div class="history-toolbar"><p>记录接收中断、恢复与路径变化。</p><a href="/events.csv" download="switch-events.csv">导出 CSV <span aria-hidden="true">↗</span></a></div><ol id="event-list"><li class="no-event">等待第一条连接记录</li></ol></div></details>
+    <footer class="studio-footer"><span>ESP32-P4 + C6 · 局域网图像传输</span><p>帧率与帧丢失率统计最近 3 秒。丢失率按已编码图像的帧编号计算，不计编码前跳过的原始画面。路径切换与画面开关均通过 Wi-Fi 控制。</p><span id="service-state">接收服务连接中</span></footer>
+  </main>
+  <div id="loss-info" class="info-popover" popover><h2>帧丢失率如何计算？</h2><p>最近 3 秒内，缺少的已编码帧编号 ÷ 预期已编码帧数。编码前跳过的原始画面不计入；请结合实际接收帧率判断流畅度。</p><p>这是图像帧到达指标，不是 Wi-Fi 或 IP 数据包丢失率，也不显示 TCP 重传次数。断线或样本不足时显示“—”。</p><button popovertarget="loss-info" popovertargetaction="hide">知道了</button></div>
+</body>
+</html>

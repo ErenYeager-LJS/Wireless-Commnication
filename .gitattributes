@@ -9,3 +9,6 @@
 *.md text eol=lf working-tree-encoding=UTF-8
 *.tex text eol=lf working-tree-encoding=UTF-8
 *.pdf binary
+*.py text eol=lf working-tree-encoding=UTF-8
+*.cmd text eol=crlf working-tree-encoding=UTF-8
+*.ps1 text eol=crlf working-tree-encoding=UTF-8

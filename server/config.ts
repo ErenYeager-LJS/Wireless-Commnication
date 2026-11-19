@@ -14,6 +14,8 @@ export const config = {
   framesDir: path.join(projectRoot, 'data', 'frames'),
   distDir: path.join(projectRoot, 'dist'),
   port: intEnv('PORT', 8787),
+  espMode: process.env.PLATFORM_BACKEND === 'esp32',
+  espReceiverUrl: process.env.ESP_RECEIVER_URL ?? 'http://127.0.0.1:8080',
   mqttPort: intEnv('MQTT_PORT', 1883),
   demoMode: (process.env.DEMO_MODE ?? 'true').toLowerCase() === 'true',
   deviceToken: process.env.DEVICE_TOKEN ?? 'relay-demo-token',

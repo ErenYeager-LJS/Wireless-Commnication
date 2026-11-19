@@ -1,7 +1,8 @@
-import type { CommandRecord, LinkMode, Snapshot } from './types';
+import type { CommandRecord, RouteMode, Snapshot } from './types';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(40_000),
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
@@ -11,7 +12,9 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   snapshot: () => request<Snapshot>('/api/snapshot'),
-  setMode: (mode: LinkMode) => request<Snapshot>('/api/mode', { method: 'POST', body: JSON.stringify({ mode }) }),
+  setMode: (mode: RouteMode) => request<unknown>('/api/mode', { method: 'POST', body: JSON.stringify({ mode }) }),
+  camera: (enabled: boolean) => request<unknown>('/api/esp/camera', {method: 'POST', body: JSON.stringify({enabled})}),
+  detection: (enabled: boolean) => request<unknown>('/api/esp/detection', {method: 'POST', body: JSON.stringify({enabled})}),
   command: (action: CommandRecord['action'], target = 'TERM-01') =>
     request<CommandRecord>('/api/commands', { method: 'POST', body: JSON.stringify({ action, target }) }),
   scenario: (scenario: Snapshot['demoScenario']) =>

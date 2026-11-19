@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-11-19",
+    "macrostructure": "telemetry workbench",
+    "theme": "existing campus green with architectural lighting",
+    "enrichment": "Instanced glazed facades, warm architectural accents, planted campus and detailed quadcopter",
+    "brief": "Upgrade scene materials, shadows, surface detail and composition while retaining live radio topology and offline operation"
+  },
+  {
+    "date": "2026-11-19",
+    "macrostructure": "telemetry workbench",
+    "theme": "existing campus green",
+    "enrichment": "Elevated circular aircraft motion with smoothly varying RSSI radius",
+    "brief": "Continuous strong-signal radius mapping, constant flight speed, phase continuity and higher altitude"
+  },
+  {
+    "date": "2026-11-19",
+    "macrostructure": "telemetry workbench",
+    "theme": "existing campus green",
+    "enrichment": "RSSI-driven straight aircraft path with live relay topology",
+    "brief": "Readable screen-space labels, foldable details and rails, aircraft camera to centre relay and right receiver"
+  },
+  {
+    "date": "2026-11-19",
+    "macrostructure": "telemetry workbench",
+    "theme": "existing campus green",
+    "enrichment": "existing Three.js campus and live OV5647 video",
+    "brief": "Integrate the existing single-camera ESP relay without replacing campus UI or demo mode"
+  }
+]

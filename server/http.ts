@@ -8,18 +8,37 @@ import { config } from './config.js';
 import { publishCommand, publishMode } from './mqtt-broker.js';
 import { DemoSimulator } from './simulator.js';
 import { platformState } from './state.js';
+import type { EspBridge } from './esp-bridge.js';
 
 function sendJson(ws: import('ws').WebSocket, message: ServerMessage): void {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
 }
 
-export function createHttpApp(simulator: DemoSimulator | null): express.Express {
+export function createHttpApp(simulator: DemoSimulator | null, bridge: EspBridge | null = null): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '256kb' }));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, demoMode: config.demoMode, time: new Date().toISOString() }));
-  app.get('/api/snapshot', (_req, res) => res.json(platformState.snapshot()));
+  app.get('/api/health', (_req, res) => res.json({ ok: true, demoMode: !bridge && config.demoMode, backend: bridge ? 'esp32' : 'mqtt', time: new Date().toISOString() }));
+  app.get('/api/snapshot', (_req, res) => res.json(bridge ? bridge.snapshot() : platformState.snapshot()));
+
+  if (bridge) {
+    app.get('/api/esp/stream', (req, res) => bridge.stream(req, res));
+    app.get('/api/esp/detection', (_req, res) => res.json(bridge.snapshot().esp?.detection ?? {fresh: false, boxes: []}));
+    app.post(['/api/mode', '/api/esp/camera', '/api/esp/detection'], async (req, res) => {
+      const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '');
+      const origin = req.get('origin');
+      if (!local || (origin && origin !== `${req.protocol}://${req.get('host')}`)) return res.status(403).json({error: '仅允许本机页面控制 ESP'});
+      if (!req.is('application/json')) return res.status(400).json({error: '请使用 JSON 指令'});
+      const kind = req.path === '/api/mode' ? 'route' : req.path.endsWith('/camera') ? 'camera' : 'detection';
+      const data = kind === 'route' ? {mode: req.body?.mode} : kind === 'camera' ? {camera: 'mipi', enabled: req.body?.enabled} : {enabled: req.body?.enabled};
+      if (kind === 'route' ? !['direct', 'relay', 'auto'].includes(data.mode) : typeof data.enabled !== 'boolean') return res.status(400).json({error: '无效的控制参数'});
+      try { return res.json(await bridge.command(kind, data)); }
+      catch (error) { return res.status(503).json({error: error instanceof Error ? error.message : '控制失败'}); }
+    });
+    app.post('/api/commands', (_req, res) => res.status(409).json({error: '当前 OV5647 方案未接入警示灯和告警执行器'}));
+    app.post('/api/device/:nodeId/frame', (_req, res) => res.status(409).json({error: 'ESP32 模式由本地 H.264 接收端提供画面'}));
+  }
 
   app.post('/api/mode', (req, res) => {
     const mode = req.body?.mode;
@@ -95,9 +114,11 @@ export function createHttpApp(simulator: DemoSimulator | null): express.Express 
   return app;
 }
 
-export function attachWebSocket(server: Server): WebSocketServer {
+export function attachWebSocket(server: Server, bridge: EspBridge | null = null): WebSocketServer {
   const wss = new WebSocketServer({ server, path: '/ws' });
-  wss.on('connection', (ws) => sendJson(ws, { type: 'snapshot', data: platformState.snapshot() }));
-  platformState.onChange((snapshot) => wss.clients.forEach((ws) => sendJson(ws, { type: 'state', data: snapshot })));
+  wss.on('connection', (ws) => sendJson(ws, { type: 'snapshot', data: bridge ? bridge.snapshot() : platformState.snapshot() }));
+  const update = (snapshot: Snapshot) => wss.clients.forEach((ws) => { if (ws.bufferedAmount < 256 * 1024) sendJson(ws, { type: 'state', data: snapshot }); });
+  const unsubscribe = bridge ? bridge.onChange(update) : platformState.onChange(update);
+  wss.on('close', unsubscribe);
   return wss;
 }
