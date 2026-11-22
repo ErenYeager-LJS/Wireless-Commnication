@@ -18,4 +18,10 @@ integrations/esp-receiver/receiver/models/*.onnx
 integrations/esp-receiver/Soft/buffer/
 __pycache__/
 *.pyc
+deploy/private/
+releases/
+integrations/esp-firmware/common/secrets.h
+integrations/esp-firmware/common/cloud_config.h
+integrations/esp-firmware/**/sdkconfig
+integrations/esp-firmware/**/sdkconfig.old
 docs/双摄像头无线中继方案/buffer/

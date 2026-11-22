@@ -4,8 +4,8 @@ import { Camera, Maximize2, Minimize2, Scan } from 'lucide-react';
 import type { EspSnapshot } from './types';
 import { api } from './api';
 
-export function EspCameraPanel({ esp, busy, run }: {
-  esp: EspSnapshot; busy: string; run: (key: string, action: () => Promise<unknown>) => Promise<void>;
+export function EspCameraPanel({ esp, busy, run, cloud=false }: {
+  esp: EspSnapshot; busy: string; run: (key: string, action: () => Promise<unknown>) => Promise<void>; cloud?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -64,7 +64,7 @@ export function EspCameraPanel({ esp, busy, run }: {
     <div className="camera-feed" data-testid="esp-camera-feed">
       {online && <img ref={image} key={retry} className={`esp-video ${loaded && !failed ? '' : 'not-loaded'}`} src={`/api/esp/stream?v=${retry}`}
         alt="OV5647 实时画面" onLoad={() => {setLoaded(true); setFailed(false);}} onError={() => {setFailed(true); setLoaded(false);}} />}
-      {(!online || !loaded || failed) && <div className="camera-empty"><Camera size={30} /><strong>{!esp.receiverAvailable ? '等待本地接收端' : video?.enabled === false ? '画面已暂停' : failed ? '画面连接中断' : online ? '正在载入画面' : '等待摄像头连接'}</strong><span>{esp.error ?? 'ESP32-P4 + C6 / OV5647'}</span></div>}
+      {(!online || !loaded || failed) && <div className="camera-empty"><Camera size={30} /><strong>{!esp.receiverAvailable ? cloud ? '等待云端接收服务' : '等待本地接收端' : video?.enabled === false ? '画面已暂停' : failed ? '画面连接中断' : online ? '正在载入画面' : '等待摄像头连接'}</strong><span>{esp.error ?? 'ESP32-P4 + C6 / OV5647'}</span></div>}
       <div className="person-overlay" aria-hidden="true">{fresh && detection.boxes.map((b, i) =>
         <div key={i} className="person-box" style={{left: geometry.x + b.x * geometry.width, top: geometry.y + b.y * geometry.height, width: b.width * geometry.width, height: b.height * geometry.height}}>
           <span>人 · {Math.round(b.confidence * 100)}%</span>
@@ -80,7 +80,7 @@ export function EspCameraPanel({ esp, busy, run }: {
     <div className="camera-meta"><span>{video?.codec ?? 'H.264 硬件编码'}</span><span>{online ? `${video?.age_ms ?? 0} ms 前` : '等待新帧'}</span></div>
     <div className="esp-detection"><div><b><Scan size={14} />人物框选</b><span role="status" title={detection?.error ?? '遮挡、衣物和暗光可能造成误检或漏检'}>{detectionText}</span></div><button className="esp-switch" role="switch" aria-label="人物框选" aria-checked={detection?.enabled ?? false} disabled={!!busy || !esp.receiverAvailable || !detection}
       onClick={() => run('detection', () => api.detection(!detection?.enabled))}><i /><span>{detection?.enabled ? '开启' : '关闭'}</span></button></div>
-    <div className="detection-foot"><span>本机处理 · {fresh ? `${detection.fps.toFixed(1)} Hz / ${Math.round(detection.inference_ms ?? 0)} ms` : '—'}</span><span>人数仅供参考</span></div>
+    <div className="detection-foot"><span>{cloud ? '云端检测默认关闭' : '本机处理'} · {fresh ? `${detection.fps.toFixed(1)} Hz / ${Math.round(detection.inference_ms ?? 0)} ms` : '—'}</span><span>人数仅供参考</span></div>
   </section>;
   return expanded ? createPortal(<dialog ref={dialog} className="esp-camera-modal" aria-label="放大的 OV5647 实时画面"
     onCancel={() => setExpanded(false)}>{panel}</dialog>, document.body) : panel;

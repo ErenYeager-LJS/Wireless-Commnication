@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
+if(NOT CLOUD_VENDOR_COMPONENTS)
+  message(FATAL_ERROR "Set CLOUD_VENDOR_COMPONENTS to the existing tested P4 vendor components")
+endif()
+set(EXTRA_COMPONENT_DIRS "../common" "${CLOUD_VENDOR_COMPONENTS}")
+set(EXCLUDE_COMPONENTS usb_host_uvc)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(esp_relay_camera_p4)

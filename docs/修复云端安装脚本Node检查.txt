@@ -1,0 +1,25 @@
+修复 Windows PowerShell 调用 Node 时丢失引号的问题
+
+Node 已安装，无需因为这条报错重装。
+安装脚本中的 JavaScript 本身正确，但 Windows PowerShell 传递 -e 参数时可能丢失内部双引号。
+
+请在云服务器上操作。
+
+1. 在 PowerShell 中执行下面两条命令，进入目录并打开脚本：
+
+Set-Location "C:\WirelessCloud\Wireless-Cloud-Server-20261122"
+notepad .\deploy\Install-Cloud.ps1
+
+2. 找到以 & $NodeExe -e 开头、包含 process.versions.node.split 的整行。
+删除这一整行，换成下面这一行。请完整复制，不要把标题或说明一起复制：
+
+'if(Number(process.versions.node.split(".")[0])<22)process.exit(1);require("node:sqlite")' | & $NodeExe -
+
+3. 其他行保持不变，尤其保留下面检查 $LASTEXITCODE 的那一行。
+保存并关闭记事本。
+
+4. 回到 PowerShell，重新执行安装：
+
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\deploy\Install-Cloud.ps1"
+
+替换写法已在本机 Windows PowerShell 测试通过；云服务器上的完整安装仍需执行后确认。

@@ -27,8 +27,9 @@ def receive_exact(sock, size):
 
 
 class H264Receiver:
-    def __init__(self, stores):
+    def __init__(self, stores, jpeg_quality=85, decode_threads=2, timeout=3):
         self.stores = stores
+        self.jpeg_quality, self.decode_threads, self.timeout = jpeg_quality, decode_threads, timeout
         self.counts = dict(connections=0, decoded=0, errors=0, bytes=0,
                            decode_ms=0.0, display_encode_ms=0.0)
         self.lock = threading.Lock()
@@ -45,9 +46,9 @@ class H264Receiver:
                     pass
         self.counts['connections'] += 1
         decoder = av.CodecContext.create('h264', 'r')
-        decoder.thread_count = 2
+        decoder.thread_count = self.decode_threads
         decoder.thread_type = 'SLICE'
-        sock.settimeout(3)
+        sock.settimeout(self.timeout)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         first = True
         try:
@@ -77,7 +78,7 @@ class H264Receiver:
                     raise ValueError('actual decoded size differs from camera metadata')
                 start = time.perf_counter()
                 ok, jpg = cv2.imencode('.jpg', frame.to_ndarray(format='bgr24'),
-                                       [cv2.IMWRITE_JPEG_QUALITY, 85])
+                                       [cv2.IMWRITE_JPEG_QUALITY, self.jpeg_quality])
                 if not ok:
                     raise ValueError('display JPEG encode failed')
                 self.counts['display_encode_ms'] = round((time.perf_counter()-start)*1000, 2)

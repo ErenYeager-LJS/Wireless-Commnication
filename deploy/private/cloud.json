@@ -1,0 +1,15 @@
+{
+  "public_host": "101.43.11.188",
+  "web_port": 443,
+  "device_port": 8443,
+  "control_port": 8081,
+  "device_id": "ov5647-1",
+  "device_token": "22670a0909227c5df45983296641e65a570ab91218d1fd20d5a8b4f7339271dc",
+  "control_key": "bffb236e5f90dda7bf3c521320fbcfdbdb9c8d307c437c9563db14ef5db5ead3",
+  "web_user": "admin",
+  "password_salt": "fca722f63ce1b165a570fdc215090a5e",
+  "password_hash": "1b2353fb6b23af5eb166b3cd8498515fc898f76fc385521595d94d86f9a7d58f543177fbcc8426dd4f746ef99139a2150184d629c81015537047d0299078d780",
+  "certificate": "server-cert.pem",
+  "private_key": "server-key.pem",
+  "detection_enabled": false
+}

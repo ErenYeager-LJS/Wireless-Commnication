@@ -1,0 +1,7 @@
+摄像头热点：DEMO_CAM_SETUP_XXXX
+密码：esp32demo
+地址：http://192.168.5.1/
+
+中继热点：DEMO_RELAY
+密码：DemoRelay2026
+地址：http://192.168.4.1/

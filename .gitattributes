@@ -10,5 +10,12 @@
 *.tex text eol=lf working-tree-encoding=UTF-8
 *.pdf binary
 *.py text eol=lf working-tree-encoding=UTF-8
+*.c text eol=lf working-tree-encoding=UTF-8
+*.h text eol=lf working-tree-encoding=UTF-8
+*.txt text eol=lf working-tree-encoding=UTF-8
 *.cmd text eol=crlf working-tree-encoding=UTF-8
 *.ps1 text eol=crlf working-tree-encoding=UTF-8
+*.zip binary
+*.bin binary
+*.cer binary
+*.pem text eol=lf

@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadCloudSettings } from './cloud-auth.js';
 
-const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectRoot = process.env.PROJECT_ROOT ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function intEnv(name: string, fallback: number): number {
   const value = Number.parseInt(process.env[name] ?? '', 10);
@@ -9,6 +10,7 @@ function intEnv(name: string, fallback: number): number {
 }
 
 export const config = {
+  cloud: loadCloudSettings(),
   projectRoot,
   dataDir: path.join(projectRoot, 'data'),
   framesDir: path.join(projectRoot, 'data', 'frames'),

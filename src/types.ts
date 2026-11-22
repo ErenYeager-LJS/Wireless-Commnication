@@ -73,6 +73,7 @@ export interface CameraState {
 }
 
 export interface Snapshot {
+  cloud?: boolean;
   esp?: EspSnapshot;
   serverTime: string;
   mode: LinkMode;

@@ -6,6 +6,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
+  if (response.status === 401 && location.protocol === 'https:') location.replace('/login');
   if (!response.ok) throw new Error((await response.json().catch(() => null))?.error ?? `HTTP ${response.status}`);
   return response.status === 204 ? (undefined as T) : response.json() as Promise<T>;
 }

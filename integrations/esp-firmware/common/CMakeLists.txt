@@ -1,0 +1,1 @@
+idf_component_register(SRCS "demo_network.c" "demo_portal.c" INCLUDE_DIRS "." REQUIRES esp_wifi esp_netif nvs_flash esp_event esp_timer lwip esp_http_server json esp_hw_support EMBED_TXTFILES "provision.html")

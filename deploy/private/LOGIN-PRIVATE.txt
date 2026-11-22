@@ -1,0 +1,5 @@
+Private cloud login; do not publish
+URL: https://101.43.11.188
+Username: admin
+Password: 5ECsIMkqbdv18FM6a2p1z2tabsv19H-p
+Certificate SHA256: 04cdceb683db098b9801244cbc9127980caadf58b716c73e0a05bd77bcb3eebe

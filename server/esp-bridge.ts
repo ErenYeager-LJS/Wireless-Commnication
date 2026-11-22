@@ -40,7 +40,7 @@ export function makeEspSnapshot(esp: EspSnapshot, now = Date.now()): Snapshot {
 }
 
 export class EspBridge {
-  state: EspSnapshot = {receiverAvailable: false, error: '等待本地 ESP 接收端', updatedAt: null,
+  state: EspSnapshot = {receiverAvailable: false, error: '等待 ESP 接收服务', updatedAt: null,
     video: null, control: null, detection: null, transport: null, paths: {direct: null, relay: null}};
   listeners = new Set<(snapshot: Snapshot) => void>();
   private timer?: NodeJS.Timeout;
@@ -63,7 +63,7 @@ export class EspBridge {
     return result as T;
   }
 
-  snapshot(): Snapshot { return makeEspSnapshot(this.state); }
+  snapshot(): Snapshot { return {...makeEspSnapshot(this.state), ...(process.env.CLOUD_CONFIG ? {cloud:true} : {})}; }
   onChange(listener: (snapshot: Snapshot) => void): () => void {
     this.listeners.add(listener); return () => this.listeners.delete(listener);
   }
@@ -76,7 +76,7 @@ export class EspBridge {
     ]);
     const available = video.status === 'fulfilled';
     this.state.receiverAvailable = available;
-    this.state.error = available ? null : '本地接收端未连接，请启动 ESP 接收程序';
+    this.state.error = available ? null : process.env.CLOUD_CONFIG ? '云端接收服务未连接，请检查服务器运行状态' : '本地接收端未连接，请启动 ESP 接收程序';
     this.state.updatedAt = new Date().toISOString();
     if (available) this.state.video = video.value;
     else if (this.state.video) this.state.video = {...this.state.video, online: false};

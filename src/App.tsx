@@ -140,12 +140,13 @@ export function App() {
   };
 
   const selectedNode = useMemo(() => snapshot?.nodes.find((node) => node.nodeId === selected), [snapshot, selected]);
-  if (!snapshot) return <div className="loading"><RefreshCw size={28} className="spin" /><span>正在接入本地数据服务</span></div>;
+  if (!snapshot) return <div className="loading"><RefreshCw size={28} className="spin" /><span>正在接入数据服务</span></div>;
 
   return <main className={`app health-${snapshot.health} ${snapshot.esp ? 'esp-platform' : ''} ${leftCollapsed ? 'left-collapsed' : ''} ${rightCollapsed ? 'right-collapsed' : ''}`}>
     <header className="topbar">
       <div className="brand"><span className="brand-mark"><ShieldCheck size={22} /></span><div><b>麟盾</b><span>数据通信中继与三维联动平台</span></div></div>
       <div className="system-summary">
+        {snapshot.cloud && <button className="cloud-logout" onClick={()=>void fetch('/auth/logout',{method:'POST'}).then(response=>{if(response.ok)location.replace('/login');})}>退出登录</button>}
         <span className={`connection ${connected ? 'online' : ''}`}><i />{connected ? '平台在线' : '正在重连'}</span>
         <span className={`source-tag ${snapshot.source}`}>{snapshot.source === 'measured' ? '实测数据' : '模拟数据'}</span>
         <span className={`health-badge ${snapshot.health}`}><HealthIcon size={15} />{meta.label}</span>
@@ -175,7 +176,7 @@ export function App() {
       <button className="rail-toggle rail-toggle-right" aria-label={rightCollapsed ? '展开控制侧栏' : '收起控制侧栏'} aria-expanded={!rightCollapsed} title={rightCollapsed ? '展开控制侧栏' : '收起控制侧栏'} onClick={() => setRightCollapsed(v => !v)}>{rightCollapsed ? <ChevronsLeft size={18} /> : <ChevronsRight size={18} />}</button>
     </>}
     <aside className="left-rail">{snapshot.esp ? <>
-      <EspCameraPanel esp={snapshot.esp} busy={busy} run={run} />
+      <EspCameraPanel esp={snapshot.esp} busy={busy} run={run} cloud={snapshot.cloud}/>
       <FoldablePanel title="视频链路详情"><QualityPanel snapshot={snapshot} /></FoldablePanel>
       <FoldablePanel title="直连 / 中继对比"><ComparisonPanel snapshot={snapshot} /></FoldablePanel>
     </> : <><CameraPanel snapshot={snapshot} /><QualityPanel snapshot={snapshot} /><ComparisonPanel snapshot={snapshot} /></>}</aside>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ESP · Wi-Fi 配网</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101113;color:#f3f4f6;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:480px;margin:auto;padding:36px 22px}small,.hint{color:#a5aab5;font-size:14px}h1{font-size:30px;letter-spacing:-1px;margin:8px 0}h2{font-size:16px;margin:24px 0 8px}.card{background:#1c1e22;border:1px solid #34373d;border-radius:18px;padding:20px;margin:20px 0}label{display:block;margin:16px 0 6px}input,button{font:inherit;width:100%;min-height:48px;border-radius:10px}input{padding:10px 12px;color:inherit;background:#111216;border:1px solid #474b54}button{margin-top:22px;background:#8cd4b1;border:0;color:#11251b;font-weight:650;cursor:pointer}button:disabled{opacity:.45;cursor:wait}input:focus,button:focus-visible{outline:2px solid #8cd4b1;outline-offset:3px}#status{white-space:pre-line;overflow-wrap:anywhere}#saved{padding-left:22px;overflow-wrap:anywhere}.check{display:flex;align-items:center;gap:8px;font-size:14px;color:#a5aab5}.check input{width:18px;min-height:18px;margin:0}.pill{font-size:13px;display:inline-block;padding:4px 10px;background:#26362f;border-radius:20px;color:#9edcbb}a{color:#9edcbb}p{margin:8px 0}
+</style>
+<main><small>WIRELESS COMMUNICATION</small><h1>连接现场 Wi-Fi</h1><span id="device" class="pill">正在读取设备…</span>
+<div class="card"><p id="status" role="status" aria-live="polite">连接设备后，在这里添加网络。</p><p id="window" class="hint"></p></div>
+<form id="form" class="card"><label for="ssid">Wi-Fi 名称</label><input id="ssid" name="ssid" autocomplete="off" required placeholder="输入 2.4 GHz Wi-Fi 或手机热点名称">
+<label for="password">Wi-Fi 密码</label><input id="password" name="password" type="password" autocomplete="new-password" placeholder="开放网络可留空">
+<label class="check"><input id="show" type="checkbox">显示密码</label><button id="submit" type="submit" disabled>连接并保存</button>
+<p class="hint">名称最多 32 字节；密码为 8–63 字节或 64 位十六进制 PSK。连接成功后才会保存，最多记住 6 个网络。</p></form>
+<h2>已保存的网络</h2><ul id="saved"><li>读取中…</li></ul>
+<p class="hint">两块板要分别配网，推荐填写相同网络。手机热点请启用 2.4 GHz／最大兼容性。若手机提示“无互联网”，选择继续使用此 Wi-Fi。此页面不需要互联网。</p>
+<p class="hint">热点换信道或摄像头配网完成后，手机可能断开。摄像头上线且 30 秒窗口结束后关闭配网热点；中继保留热点传输画面，但关闭配网写入。</p>
+</main><script>
+const $=id=>document.getElementById(id);let nonce='',busy=false,posting=false,accepted=false,lastActive=true;
+$('show').onchange=()=>{$('password').type=$('show').checked?'text':'password'};
+async function poll(){
+ try{const response=await fetch('/wifi/status',{cache:'no-store'});if(!response.ok)throw Error();const s=await response.json();nonce=s.token;busy=s.testing;lastActive=s.active;
+ $('device').textContent=s.hotspot;$('status').textContent=(s.online?'当前已连接：'+s.ssid+'\n':'')+s.message;
+ $('window').textContent=s.remaining_s?'开机配网窗口剩余 '+s.remaining_s+' 秒':s.active?'网络未就绪，配网入口保持开放':'已联网，配网窗口已关闭；重启设备可再次添加网络';
+ $('saved').replaceChildren();for(const ssid of s.saved){const item=document.createElement('li');item.textContent=ssid;$('saved').append(item)}if(!s.saved.length){const item=document.createElement('li');item.textContent='尚未保存新的网络';$('saved').append(item)}
+ $('submit').disabled=posting||busy||!s.active;$('submit').textContent=busy?'正在连接…':'连接并保存';
+ if(accepted&&s.online&&!s.testing){accepted=false;$('password').value=''}
+ }catch{if(accepted)$('status').textContent='设备正在切换网络。若手机断开，请重新连接设备热点查看结果；摄像头上线后会关闭配网热点。';else $('status').textContent='暂时无法连接设备，请确认手机仍连接着设备热点。';$('submit').disabled=true;}
+}
+$('form').onsubmit=async event=>{event.preventDefault();if(posting||busy||!lastActive||!nonce)return;const ssid=$('ssid').value,password=$('password').value;
+ if(!ssid||new TextEncoder().encode(ssid).length>32){$('status').textContent='名称必须为 1–32 字节；中文通常每字占 3 字节。';return}
+ const length=new TextEncoder().encode(password).length;if(length&&(length<8||length>64||(length===64&&!/^[0-9a-fA-F]{64}$/.test(password)))){$('status').textContent='请检查密码长度；开放网络可留空。';return}
+ posting=true;$('submit').disabled=true;try{const r=await fetch('/wifi/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ssid,password,token:nonce})});if(!r.ok)throw Error('提交失败，请刷新页面后重试');accepted=true;$('status').textContent='已提交，正在连接。请稍候…';}catch(e){$('status').textContent=e.message}finally{posting=false;}
+};poll();setInterval(poll,1500);
+</script></html>

@@ -28,8 +28,9 @@ export function usePlatform() {
         lastMessage = Date.now();
         if ((message.type === 'snapshot' || message.type === 'state') && active) setSnapshot(message.data);
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (!active) return;
+        if(event.code===1008 && location.protocol==='https:'){location.replace('/login');return;}
         setConnected(false);
         invalidate();
         retry = window.setTimeout(connect, 1_500);
